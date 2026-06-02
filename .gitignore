@@ -1,0 +1,35 @@
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ── Build output ─────────────────────────────────────────────────────────────
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Generated code (always re-created by a command, never edited) ───────────
+apps/api/src/generated/
+
+# ── Secrets: real values live only on each machine ──────────────────────────
+# .env.example IS committed: it documents every variable without values.
+.env
+.env.*
+!.env.example
+
+# ── Runtime data created by Docker volumes / the app ────────────────────────
+infra/nginx/certs/
+uploads/
+
+# ── Tests & tooling ──────────────────────────────────────────────────────────
+coverage/
+*.log
+
+# ── OS / editor noise ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

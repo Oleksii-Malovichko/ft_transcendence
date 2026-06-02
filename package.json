@@ -1,0 +1,8 @@
+{
+  "name": "ft_transcendence",
+  "private": true,
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.22"
+  }
+}
