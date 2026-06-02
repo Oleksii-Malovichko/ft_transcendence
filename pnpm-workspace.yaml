@@ -1,3 +1,9 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+catalog:
+  typescript: 6.0.3 # 6.x on purpose: typescript-eslint does not support 7.x yet
+  "@types/node": 24.13.6 # matches Node 24 LTS (see .nvmrc)
+  vitest: 4.1.11 # the version NestJS 12 is scaffolded with
+  zod: 4.6.5 # validation: backend settings (api) and shared schemas (core)  

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    // ── Type safety ──────────────────────────────────────────────────────────
+    "strict": true, //                   all strict checks (null checks, no implicit any...)
+    "noUncheckedIndexedAccess": true, // array[i] is `T | undefined` → forces a check
+    "noImplicitOverride": true, //       overriding a parent method needs `override`
+    "noFallthroughCasesInSwitch": true, // a `case` without break/return is an error
+    "forceConsistentCasingInFileNames": true, // "./Game" vs "./game" breaks on Linux
+
+    // ── Modules ──────────────────────────────────────────────────────────────
+    "isolatedModules": true, //  each file must compile alone (Next, Vite and SWC need it)
+    "esModuleInterop": true, //  lets `import x from "cjs-package"` work
+    "resolveJsonModule": true, // allows `import data from "./file.json"`
+
+    // ── Language level ───────────────────────────────────────────────────────
+    "target": "ES2023", //       Node 24 and current Chrome support all of ES2023
+    "lib": ["ES2023"], //        packages that run in a browser add "DOM" themselves
+
+    // ── Speed ────────────────────────────────────────────────────────────────
+    "skipLibCheck": true //      don't type-check .d.ts files inside node_modules
+  }
+}
