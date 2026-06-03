@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2023"], // browser APIs (window, document...)
+    "jsx": "react-jsx", //                     JSX without importing React
+    "module": "esnext", //                     the bundler handles imports...
+    "moduleResolution": "bundler", //          ...so resolve like a bundler does
+    "noEmit": true, //                         Next.js builds; tsc only checks
+    "incremental": true, //                    faster repeated type-checks
+    "plugins": [{ "name": "next" }], //        editor hints for Next.js APIs
+    "paths": { "@/*": ["./src/*"] } //         import "@/lib/x" = "src/lib/x"
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    ".next/types/**/*.ts", //     types Next.js generates for our routes
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
