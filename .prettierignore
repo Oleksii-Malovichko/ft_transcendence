@@ -1,0 +1,7 @@
+# Files Prettier must not touch (generated, built, or owned by a tool).
+pnpm-lock.yaml
+**/dist/
+**/.next/
+**/coverage/
+apps/api/src/generated/
+apps/api/prisma/migrations/
