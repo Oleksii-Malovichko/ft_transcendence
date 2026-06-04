@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext", //        ES modules, same style as the backend
+    "moduleResolution": "nodenext",
+    "types": [], //                 don't load @types/node automatically
+    "noEmit": true //               this file only checks; the build uses tsconfig.build.json
+  },
+  "include": ["src"]
+}
