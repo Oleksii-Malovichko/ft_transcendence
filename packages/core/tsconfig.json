@@ -6,5 +6,5 @@
     "types": [], //                 don't load @types/node automatically
     "noEmit": true //               this file only checks; the build uses tsconfig.build.json
   },
-  "include": ["src"]
+  "include": ["src", "vitest.config.ts"]
 }
