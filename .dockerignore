@@ -1,0 +1,17 @@
+# Installed or built inside the image itself, never copied from the host
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/*.tsbuildinfo
+
+# Secrets and runtime data
+.env
+.env.*
+!.env.example
+infra/nginx/certs
+**/uploads
+
+# Not needed to build or run the app
+.git
+**/*.log
