@@ -1,0 +1,32 @@
+name: ft_transcendence
+
+services:
+  db:
+    # Pinned major version: PostgreSQL data files are not compatible between
+    # majors. (18 also moved the data directory inside the image, which
+    # breaks most tutorials; 17 is supported until 2029.)
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      # Named volume: the data survives `docker compose down` and rebuilds.
+      - db-data:/var/lib/postgresql/data
+    ports:
+      # Local development only: lets the backend running on your machine
+      # reach the database. 127.0.0.1 = reachable from this computer only.
+      # Removed in S2, when the backend itself runs inside Compose.
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      # pg_isready answers "is the server accepting connections?".
+      # $$ tells Compose "not my variable": the shell INSIDE the container
+      # expands it. Other services will wait for "healthy" before starting.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:
