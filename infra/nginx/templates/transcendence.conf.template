@@ -1,0 +1,15 @@
+server {
+    listen 80;
+
+    # Headers the backends need to know the real client, host and protocol.
+    # Inherited by every location below that sets none of its own.
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Everything → the Next.js frontend.
+    location / {
+        proxy_pass http://web:3000;
+    }
+}

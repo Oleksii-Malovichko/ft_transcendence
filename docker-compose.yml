@@ -2,9 +2,6 @@ name: ft_transcendence
 
 services:
   db:
-    # Pinned major version: PostgreSQL data files are not compatible between
-    # majors. (18 also moved the data directory inside the image, which
-    # breaks most tutorials; 17 is supported until 2029.)
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -14,19 +11,69 @@ services:
     volumes:
       # Named volume: the data survives `docker compose down` and rebuilds.
       - db-data:/var/lib/postgresql/data
-    ports:
-      # Local development only: lets the backend running on your machine
-      # reach the database. 127.0.0.1 = reachable from this computer only.
-      # Removed in S2, when the backend itself runs inside Compose.
-      - "127.0.0.1:5432:5432"
     healthcheck:
-      # pg_isready answers "is the server accepting connections?".
-      # $$ tells Compose "not my variable": the shell INSIDE the container
-      # expands it. Other services will wait for "healthy" before starting.
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      est: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  # ── Backend (NestJS) ── internal only, no published port ──────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy # start only once PostgreSQL accepts connections
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  # ── Frontend (Next.js) ── internal only, no published port ────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  # ── Reverse proxy (nginx) ── the only service reachable from outside ──────
+  proxy:
+    build: ./infra/nginx
+    restart: unless-stopped
+    environment:
+      HTTPS_PORT: ${HTTPS_PORT:-8443}
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - certs:/etc/nginx/certs
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
 volumes:
   db-data:
+  certs:
