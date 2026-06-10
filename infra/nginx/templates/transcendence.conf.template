@@ -1,3 +1,12 @@
+# WebSocket: pass "Connection: upgrade" to the backend only when the client
+# asks for an upgrade; for normal requests send no Connection header at all,
+# which keeps the nginx → backend connections alive (HTTP/1.1 keep-alive).
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      '';
+}
+
+# ── Port 80: plain HTTP only redirects to HTTPS ─────────────────────────────
 server {
     listen 80;
     server_tokens off;
@@ -5,10 +14,11 @@ server {
     return 301 https://$host:${HTTPS_PORT}$request_uri;
 }
 
+# ── Port 443: the real site, over TLS ───────────────────────────────────────
 server {
     listen 443 ssl;
     http2 on;
-    server_tokens off;
+    server_tokens off; # hide the nginx version in headers and error pages
 
     # Security headers on every response ("always" = on error pages too).
     # Careful: a location with its own add_header would LOSE all of these.
@@ -16,7 +26,6 @@ server {
     add_header X-Content-Type-Options "nosniff" always; # no MIME-type guessing
     add_header X-Frame-Options "DENY" always; # no embedding in iframes
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    
     # (Browsers ignore Strict-Transport-Security while the certificate is
     # self-signed, so it cannot lock anyone out during development.)
 
@@ -25,14 +34,28 @@ server {
     ssl_certificate_key /etc/nginx/certs/server.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
 
-    # Headers the backends need to know the real client, host and protocol.
-    # Inherited by every location below that sets none of its own.
+    # Headers the backends need: real client, host, protocol, and the
+    # WebSocket upgrade. Inherited by every location below, as long as that
+    # location sets no proxy_set_header of its own (it would lose them all).
+    proxy_http_version 1.1;
     proxy_set_header Host              $host;
     proxy_set_header X-Real-IP         $remote_addr;
     proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade           $http_upgrade;
+    proxy_set_header Connection        $connection_upgrade;
 
-    # Everything → the Next.js frontend.
+    # REST API → NestJS. No path after the port, so /api stays in the URL.
+    location /api/ {
+        proxy_pass http://api:3001;
+    }
+
+    # Real-time (Socket.IO over WebSocket) → NestJS.
+    location /socket.io/ {
+        proxy_pass http://api:3001;
+    }
+
+    # Everything else → the Next.js frontend.
     location / {
         proxy_pass http://web:3000;
     }
