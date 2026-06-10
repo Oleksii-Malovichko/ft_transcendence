@@ -1,6 +1,24 @@
 server {
+    listen 80;
+    server_tokens off;
+    # ${HTTPS_PORT} is the port the BROWSER uses (8443 by default, see .env).
+    return 301 https://$host:${HTTPS_PORT}$request_uri;
+}
+
+server {
     listen 443 ssl;
     http2 on;
+    server_tokens off;
+
+    # Security headers on every response ("always" = on error pages too).
+    # Careful: a location with its own add_header would LOSE all of these.
+    add_header Strict-Transport-Security "max-age=31536000" always; # HTTPS only, 1 year
+    add_header X-Content-Type-Options "nosniff" always; # no MIME-type guessing
+    add_header X-Frame-Options "DENY" always; # no embedding in iframes
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # (Browsers ignore Strict-Transport-Security while the certificate is
+    # self-signed, so it cannot lock anyone out during development.)
 
     # Created on first start by 40-generate-self-signed-cert.sh.
     ssl_certificate     /etc/nginx/certs/server.crt;
