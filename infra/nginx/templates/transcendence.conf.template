@@ -1,5 +1,11 @@
 server {
-    listen 80;
+    listen 443 ssl;
+    http2 on;
+
+    # Created on first start by 40-generate-self-signed-cert.sh.
+    ssl_certificate     /etc/nginx/certs/server.crt;
+    ssl_certificate_key /etc/nginx/certs/server.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
 
     # Headers the backends need to know the real client, host and protocol.
     # Inherited by every location below that sets none of its own.
