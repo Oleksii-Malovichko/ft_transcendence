@@ -1,51 +1,39 @@
-# -----------\ Name \--------------------------------------------------------- #
 
-NAME	:= transcendence
+# Read .env too, so make knows its values (e.g. HTTPS_PORT for the URL).
+# On a fresh clone .env doesn't exist yet: the `.env` rule below creates it.
+-include .env
+HTTPS_PORT ?= 8443
 
-# -----------\ Files \-------------------------------------------------------- #
+COMPOSE     := docker compose
+COMPOSE_DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
 
-ENV_FILE = --env-file srcs/.env
-COMPOSE = ./srcs/docker-compose.yml
-COMPOSE_CMD = docker compose -f ${COMPOSE} ${ENV_FILE}
+.PHONY: all up down logs ps clean re db
 
-# -----------\ Rules \-------------------------------------------------------- #
+all: up
 
-all: $(NAME)
-
-$(NAME):
-	@${COMPOSE_CMD} up
-
-run:
-	@${COMPOSE_CMD} build
-	gnome-terminal -- bash -c 'sleep 4 && google-chrome --ignore-certificate-errors https://127.0.0.1:8443/playpong/hello/ && exit'
-	@${COMPOSE_CMD} up
-
-build:
-	@${COMPOSE_CMD} up --build
-
-cloud:
-	git fetch origin
-	git reset --hard origin/cloud-remote
-	@${COMPOSE_CMD} up --build
+# --wait: return only when every service is running and healthy.
+up: .env
+	$(COMPOSE) up --build --detach --wait
+	@echo "Ready: https://localhost:$(HTTPS_PORT)  (accept the self-signed certificate once)"
 
 down:
-	@${COMPOSE_CMD} down
+	$(COMPOSE) down
 
-rm_volume:
-	-docker volume ls -q | xargs docker volume rm
+logs:
+	$(COMPOSE) logs --follow
+
+ps:
+	$(COMPOSE) ps
 
 clean:
-	@echo "clean"
-	-docker ps -qa | xargs docker stop
-	-docker ps -qa | xargs docker rm
-	-docker image ls -qa | xargs docker rmi -f
-	-docker volume ls -q | xargs docker volume rm
-	-docker network ls -q | xargs
-	-docker network ls -q | xargs docker network rm 2>/dev/null
+	$(COMPOSE) down --volumes --rmi local
 
-fclean: clean
-	docker system prune -f
+re: clean up
 
-re: fclean all
+db: .env
+	$(COMPOSE_DEV) up --detach --wait db
 
-.PHONY: all build down re clean fclean
+# First run: create .env from the documented example (then review it).
+.env:
+	cp .env.example .env
+	@echo "Created .env from .env.example: review the values, especially passwords."
