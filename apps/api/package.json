@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "nest build",
-    "start:dev": "nest start --watch",
+    "dev": "prisma generate && nest start --watch",
     "start:prod": "node --enable-source-maps dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
