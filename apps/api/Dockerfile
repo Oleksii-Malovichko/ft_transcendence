@@ -26,7 +26,8 @@ FROM base AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
+COPY --chown=node:node --chmod=755 apps/api/docker-entrypoint.sh ./
 
 USER 1000
 EXPOSE 3001
-CMD ["node", "--enable-source-maps", "dist/main.js"]
+CMD ["./docker-entrypoint.sh"]
