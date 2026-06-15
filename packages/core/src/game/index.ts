@@ -1,0 +1,1 @@
+export { BALL, FIELD, PADDLE, RULES, TICK_RATE } from "./constants.js";
