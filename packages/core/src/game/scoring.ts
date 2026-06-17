@@ -8,6 +8,12 @@ export function scoringSide(ball: Ball): Side | null {
   return null;
 }
 
+export function findWinner(score: Readonly<Record<Side, number>>): Side | null {
+  if (score.left >= RULES.scoreLimit) return "left";
+  if (score.right >= RULES.scoreLimit) return "right";
+  return null;
+}
+
 export function awardPoint(state: GameState, scorer: Side): GameState {
   const loser: Side = scorer === "left" ? "right" : "left";
   const score = { ...state.score, [scorer]: state.score[scorer] + 1 };
@@ -16,5 +22,6 @@ export function awardPoint(state: GameState, scorer: Side): GameState {
     score,
     ball: serveBall(loser, (score.left + score.right) % 2 === 0),
     serveIn: RULES.serveDelay,
+    winner: findWinner(score),
   };
 }
