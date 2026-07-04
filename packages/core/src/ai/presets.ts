@@ -8,7 +8,7 @@ export type Difficulty = z.infer<typeof DifficultySchema>;
 export const DIFFICULTIES: readonly Difficulty[] = ["easy", "normal", "hard"];
 
 export const AI_PRESETS: Readonly<Record<Difficulty, AiConfig>> = {
-  easy: { visionInterval: 1, reactionDelay: 0.5, aimError: 80, deadZone: 10 },
-  normal: { visionInterval: 1, reactionDelay: 0.25, aimError: 35, deadZone: 6 },
-  hard: { visionInterval: 1, reactionDelay: 0.12, aimError: 12, deadZone: 5 },
+  easy: { visionInterval: 1.5, reactionDelay: 0.6, aimError: 110, deadZone: 12 },
+  normal: { visionInterval: 0.4, reactionDelay: 0.24, aimError: 35, deadZone: 7 },
+  hard: { visionInterval: 0.35, reactionDelay: 0.2, aimError: 28, deadZone: 6 },
 };
