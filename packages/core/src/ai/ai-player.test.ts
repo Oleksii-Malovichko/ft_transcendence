@@ -39,6 +39,16 @@ describe("AiPlayer", () => {
     expect(ai.update(state, DT)).toBe(-1); // now it moves
   });
 
+  it("still acts when it looks more often than it reacts", () => {
+    // Regression: sightings used to overwrite each other, so with a reaction
+    // slower than the look interval the AI froze in place forever.
+    const ai = new AiPlayer("right", { ...CONFIG, visionInterval: 0.1, reactionDelay: 0.15 });
+    const state = ballComing(150);
+    let moved = false;
+    for (let tick = 0; tick < TICK_RATE; tick++) moved ||= ai.update(state, DT) === -1;
+    expect(moved).toBe(true);
+  });
+
   it("is blind between two looks: it plays what it saw last", () => {
     const ai = new AiPlayer("right", CONFIG);
     ai.update(ballComing(150), DT); // look 1: the ball will arrive high

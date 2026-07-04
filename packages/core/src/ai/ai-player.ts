@@ -12,8 +12,8 @@ export class AiPlayer {
   private clock = 0; //            seconds of game time, as the AI counts them
   private nextLook = 0; //         when it may look at the game again
   private target = CENTER; //      where it is heading right now
-  private plan: { at: number; y: number } | null = null; // seen, not acted on yet
   private paddle = CENTER; //      where it believes its own paddle is
+  private readonly seen: { at: number; y: number }[] = [];
   private readonly faceX: number; // the line where the ball meets its paddle
 
   constructor(
@@ -29,10 +29,7 @@ export class AiPlayer {
   update(state: GameState, dt: number): PaddleInput {
     this.clock += dt;
     if (this.clock >= this.nextLook) this.look(state);
-    if (this.plan && this.clock >= this.plan.at) {
-      this.target = this.plan.y;
-      this.plan = null;
-    }
+    this.actOnWhatItSaw();
     const input = decide(this.paddle, this.target, this.config);
     // Between looks it can't see its paddle, so it follows its own keys.
     this.paddle = movePaddle(this.paddle, input, dt);
@@ -43,7 +40,18 @@ export class AiPlayer {
   private look(state: GameState): void {
     this.nextLook = this.clock + this.config.visionInterval;
     this.paddle = state.paddles[this.side]; // it sees its own paddle too
-    this.plan = { at: this.clock + this.config.reactionDelay, y: this.aimAt(state) };
+    this.seen.push({ at: this.clock + this.config.reactionDelay, y: this.aimAt(state) });
+  }
+
+  private actOnWhatItSaw(): void {
+    for (
+      let sighting = this.seen[0];
+      sighting && this.clock >= sighting.at;
+      sighting = this.seen[0]
+    ) {
+      this.target = sighting.y;
+      this.seen.shift();
+    }
   }
 
   private aimAt(state: GameState): number {
