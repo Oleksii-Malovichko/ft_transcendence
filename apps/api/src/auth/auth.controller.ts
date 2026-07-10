@@ -1,4 +1,11 @@
-import { LoginSchema, type MeResponse, type PublicUser, SignupSchema } from "@ft/core";
+import {
+  type LoginInput,
+  LoginSchema,
+  type MeResponse,
+  type SignupInput,
+  SignupSchema,
+} from "@ft/core";
+
 import {
   Body,
   Controller,
@@ -11,7 +18,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import type { User } from "../generated/prisma/client.js";
+import { ZodValidationPipe } from "../common/zod-validation.pipe.js";
 import { toPublicUser } from "../users/public-user.js";
 import { AuthService } from "./auth.service.js";
 
@@ -21,14 +28,17 @@ export class AuthController {
 
   @Post("login")
   @HttpCode(200)
-  async login(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body(new ZodValidationPipe(LoginSchema)) input: LoginInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const parsed = LoginSchema.safeParse(body);
 
     if (!parsed.success) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    const user = await this.auth.login(parsed.data);
+    const user = await this.auth.validateCredentials(input);
 
     if (!user) {
       throw new UnauthorizedException("Invalid credentials");
@@ -41,20 +51,22 @@ export class AuthController {
 
   @Post("signup")
   @HttpCode(201)
-  async signup(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
+  async signup(
+    @Body(new ZodValidationPipe(SignupSchema)) input: SignupInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const parsed = SignupSchema.safeParse(body);
 
     if (!parsed.success) {
       throw new UnauthorizedException("Invalid signup data");
     }
 
-    const user = await this.auth.signup(parsed.data);
+    const user = await this.auth.signup(input);
 
     this.auth.setSessionCookie(res, user);
 
     return { user: toPublicUser(user) };
   }
-
 
   @Get("me")
   @Header("Cache-Control", "no-store")
