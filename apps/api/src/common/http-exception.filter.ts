@@ -1,3 +1,4 @@
+import type { ApiErrorBody } from "@ft/core";
 import {
   type ArgumentsHost,
   Catch,
@@ -7,12 +8,7 @@ import {
 } from "@nestjs/common";
 import type { Response } from "express";
 
-export interface ErrorBody {
-  statusCode: number;
-  error: string;
-  message: string;
-  fields?: Record<string, string[]>;
-}
+export type ErrorBody = ApiErrorBody;
 
 const STATUS_NAMES: Record<number, string> = {
   400: "Bad Request",
