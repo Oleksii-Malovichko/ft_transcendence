@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PaddleInput, Side } from "@ft/core";
+import type { GameState, PaddleInput, Side } from "@ft/core";
 import { Injectable, type OnModuleDestroy } from "@nestjs/common";
 import { GameRoom } from "./game-room.js";
 
@@ -11,6 +11,8 @@ export class GameRoomsService implements OnModuleDestroy {
   createLocal(clientId: string): GameRoom {
     this.leave(clientId);
     const room = new GameRoom(randomUUID());
+    const roomId = randomUUID();
+    const room = new GameRoom(roomId, (state) => publish(roomId, state));
     this.rooms.set(room.id, room);
     this.roomOf.set(clientId, room.id);
     room.start();

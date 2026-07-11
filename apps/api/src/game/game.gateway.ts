@@ -5,7 +5,9 @@ import {
   type OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from "@nestjs/websockets";
+import type { Socket } from "socket.io";
 import type { Socket } from "socket.io";
 import { GameRoomsService } from "./game-rooms.service.js";
 
@@ -18,8 +20,12 @@ export class GameGateway implements OnGatewayDisconnect {
     if (!JoinRequestSchema.safeParse(body).success) {
       return { error: "Invalid join request" };
     }
-    const room = this.rooms.createLocal(client.id);
-    return { roomId: room.id };
+     const room = this.rooms.createLocal(client.id, (roomId, state) =>
+      this.server.to(roomId).emit(GAME_EVENTS.state, state),
+    );
+    // Socket.IO rooms group the connections that receive the room's states.
+    void client.join(room.id);
+return { roomId: room.id };
   }
 
   @SubscribeMessage(GAME_EVENTS.input)
@@ -36,6 +42,7 @@ export class GameGateway implements OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket): void {
+     void client.join(room.id);
     this.rooms.leave(client.id);
   }
 }
