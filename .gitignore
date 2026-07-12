@@ -19,6 +19,7 @@ apps/api/src/generated/
 .env
 .env.*
 !.env.example
+!apps/web/.env.development
 
 # ── Runtime data created by Docker volumes / the app ────────────────────────
 infra/nginx/certs/
