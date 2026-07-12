@@ -18,7 +18,7 @@ export class GameRoom {
   private pending = 0; // real time (seconds) not simulated yet
   private lastTurn = 0;
   private timer: ReturnType<typeof setInterval> | undefined;
-
+  private readonly controllers = new Map<string, readonly Side[]>();
   constructor(
     readonly id: string,
     private readonly onTick: (state: GameState) => void = () => {},

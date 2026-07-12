@@ -13,6 +13,7 @@ export class GameRoomsService implements OnModuleDestroy {
     const room = new GameRoom(randomUUID());
     const roomId = randomUUID();
     const room = new GameRoom(roomId, (state) => publish(roomId, state));
+    room.assign(clientId, ["left", "right"]);
     this.rooms.set(room.id, room);
     this.roomOf.set(clientId, room.id);
     room.start();
@@ -20,7 +21,7 @@ export class GameRoomsService implements OnModuleDestroy {
   }
 
   input(clientId: string, side: Side, input: PaddleInput): void {
-    this.roomFor(clientId)?.setInput(side, input);
+    this.roomFor(clientId)?.setInput(clientId, side, input);
   }
 
   leave(clientId: string): void {
