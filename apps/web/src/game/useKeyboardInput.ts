@@ -23,7 +23,10 @@ export function useKeyboardInput(
         }
       }
     };
+    const gameKeys = new Set(bindings.flatMap(({ up, down }) => [up, down]));
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!gameKeys.has(event.code)) return;
+      event.preventDefault();
       held.add(event.code);
       update();
     };
