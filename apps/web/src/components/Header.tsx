@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthMenu } from "@/auth/AuthMenu";
 import { Nav } from "./Nav";
 
 export function Header() {
