@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { AuthProvider } from "@/auth/AuthProvider";
+import { currentUser } from "@/auth/server";
 import { ToastProvider } from "@/components/ui/Toast";
 
 // Next.js turns this object into <title> and <meta> tags in <head>.
