@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PasswordService } from "./password.service.js";
 
 const passwords = new PasswordService();
-const PASSWORD = "correct horse battery staple";
+const PASSWORD = "seven purple lanterns hum";
 
 describe("PasswordService", () => {
   it("produces an Argon2id hash with the OWASP parameters", async () => {
@@ -16,7 +16,7 @@ describe("PasswordService", () => {
   it("accepts the right password and rejects a wrong one", async () => {
     const hash = await passwords.hash(PASSWORD);
     expect(await passwords.verify(hash, PASSWORD)).toBe(true);
-    expect(await passwords.verify(hash, "correct horse battery stapler")).toBe(false);
+    expect(await passwords.verify(hash, "seven purple lanterns buzz")).toBe(false);
   });
 
   it("treats both Unicode spellings of the same text as one password", async () => {

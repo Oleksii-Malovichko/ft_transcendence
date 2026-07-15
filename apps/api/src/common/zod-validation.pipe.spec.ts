@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ZodValidationPipe } from "./zod-validation.pipe.js";
 
 const pipe = new ZodValidationPipe(SignupSchema);
-const PASSWORD = "correct horse battery staple";
+const PASSWORD = "seven purple lanterns hum";
 
 describe("ZodValidationPipe", () => {
   it("hands the parsed, normalized value to the handler", () => {

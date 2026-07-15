@@ -1,4 +1,5 @@
 export * from "./schemas/auth.js";
+export * from "./schemas/common-passwords.js";
 export * from "./ai/index.js";
 export { AiPlayer } from "./ai-player.js";
 export { predictBallY } from "./predict.js";
