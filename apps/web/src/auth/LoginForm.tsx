@@ -1,7 +1,7 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type LoginInput, LoginSchema } from "@ft/core";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -12,6 +12,7 @@ import { useAuth } from "./AuthProvider";
 
 export function LoginForm() {
   const router = useRouter();
+  const next = safeNext(useSearchParams().get("next"));
   const toast = useToast();
   const { refresh } = useAuth();
   const { register, handleSubmit, setError, formState } = useForm<LoginInput>({
@@ -24,6 +25,7 @@ export function LoginForm() {
       await login(values);
       await refresh();
       router.push("/");
+      router.push(next);
     } catch (error) {
       toast(applyApiError(error, setError), "error");
     }
