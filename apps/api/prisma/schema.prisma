@@ -1,13 +1,18 @@
 generator client {
   provider            = "prisma-client"
   output              = "../src/generated/prisma"
-  moduleFormat        = "esm"
-  importFileExtension = "js"
+  moduleFormat        = "esm" // the backend is an ES-module project
+  importFileExtension = "js" //  "nodenext" requires ./file.js in imports
+}
 
+// Since Prisma 7 the connection URL is NOT here: the CLI reads it from
+// prisma.config.ts and the running app passes it in PrismaService.
 datasource db {
   provider = "postgresql"
 }
 
+/// A person who can log in and play.
+/// Profile fields (display name, avatar, 42 id) are added later by ME-2.
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
@@ -16,5 +21,29 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  /// Games this user played, on one side or the other.
+  matchesAsLeft  Match[] @relation("LeftPlayer")
+  matchesAsRight Match[] @relation("RightPlayer")
+
   @@map("users")
+}
+
+model Match {
+  id          Int      @id @default(autoincrement())
+  /// "local", "ai" or "remote".
+  mode        String
+  leftUserId  Int?     @map("left_user_id")
+  rightUserId Int?     @map("right_user_id")
+  leftScore   Int      @map("left_score")
+  rightScore  Int      @map("right_score")
+  /// "left" or "right": the side that reached the score limit.
+  winner      String
+  playedAt    DateTime @default(now()) @map("played_at")
+
+  leftUser  User? @relation("LeftPlayer", fields: [leftUserId], references: [id], onDelete: SetNull)
+  rightUser User? @relation("RightPlayer", fields: [rightUserId], references: [id], onDelete: SetNull)
+
+  @@index([leftUserId])
+  @@index([rightUserId])
+  @@map("matches")
 }
