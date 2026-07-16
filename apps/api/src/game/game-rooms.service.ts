@@ -1,45 +1,43 @@
-import { randomUUID } from "node:crypto";
-import type { GameState, PaddleInput, Side } from "@ft/core";
-import { Injectable, type OnModuleDestroy } from "@nestjs/common";
-import { GameRoom } from "./game-room.js";
+import { Injectable } from "@nestjs/common";
+
+export interface WaitingPlayer {
+  clientId: string;
+  userId?: number | undefined;
+  label: string;
+}
 
 @Injectable()
-export class GameRoomsService implements OnModuleDestroy {
-  private readonly rooms = new Map<string, GameRoom>(); // roomId → room
-  private readonly roomOf = new Map<string, string>(); // clientId → roomId
+export class MatchmakingService {
+  private readonly queue: WaitingPlayer[] = [];
 
-  createLocal(clientId: string): GameRoom {
-    this.leave(clientId);
-    const room = new GameRoom(randomUUID());
-    const roomId = randomUUID();
-    const room = new GameRoom(roomId, (state) => publish(roomId, state));
-    room.assign(clientId, ["left", "right"]);
-    this.rooms.set(room.id, room);
-    this.roomOf.set(clientId, room.id);
-    room.start();
-    return room;
-  }
-
-  input(clientId: string, side: Side, input: PaddleInput): void {
-    this.roomFor(clientId)?.setInput(clientId, side, input);
+  join(player: WaitingPlayer): [WaitingPlayer, WaitingPlayer] | null {
+    this.leave(player.clientId);
+    this.removePerson(player);
+    const index = this.queue.findIndex((waiting) => !samePerson(waiting, player));
+    const [first] = index < 0 ? [] : this.queue.splice(index, 1);
+    if (!first) {
+      this.queue.push(player);
+      return null;
+    }
+    return [first, player];
   }
 
   leave(clientId: string): void {
-    const room = this.roomFor(clientId);
-    if (!room) return;
-    room.stop();
-    this.rooms.delete(room.id);
-    this.roomOf.delete(clientId);
+    const index = this.queue.findIndex((player) => player.clientId === clientId);
+    if (index >= 0) this.queue.splice(index, 1);
   }
 
-  onModuleDestroy(): void {
-    for (const room of this.rooms.values()) room.stop();
-    this.rooms.clear();
-    this.roomOf.clear();
+  private removePerson(player: WaitingPlayer): void {
+    for (let i = this.queue.length - 1; i >= 0; i--) {
+      if (samePerson(this.queue[i]!, player)) this.queue.splice(i, 1);
+    }
   }
 
-  private roomFor(clientId: string): GameRoom | undefined {
-    const roomId = this.roomOf.get(clientId);
-    return roomId === undefined ? undefined : this.rooms.get(roomId);
+  get size(): number {
+    return this.queue.length;
   }
+}
+
+function samePerson(a: WaitingPlayer, b: WaitingPlayer): boolean {
+  return a.userId !== undefined && a.userId === b.userId;
 }
