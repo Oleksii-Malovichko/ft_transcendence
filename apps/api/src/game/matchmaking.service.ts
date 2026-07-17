@@ -12,7 +12,9 @@ export class MatchmakingService {
 
   join(player: WaitingPlayer): [WaitingPlayer, WaitingPlayer] | null {
     this.leave(player.clientId);
-    const first = this.queue.shift();
+    this.removePerson(player);
+    const index = this.queue.findIndex((waiting) => !samePerson(waiting, player));
+    const [first] = index < 0 ? [] : this.queue.splice(index, 1);
     if (!first) {
       this.queue.push(player);
       return null;
@@ -25,7 +27,17 @@ export class MatchmakingService {
     if (index >= 0) this.queue.splice(index, 1);
   }
 
+  private removePerson(player: WaitingPlayer): void {
+    for (let i = this.queue.length - 1; i >= 0; i--) {
+      if (samePerson(this.queue[i]!, player)) this.queue.splice(i, 1);
+    }
+  }
+
   get size(): number {
     return this.queue.length;
   }
+}
+
+function samePerson(a: WaitingPlayer, b: WaitingPlayer): boolean {
+  return a.userId !== undefined && a.userId === b.userId;
 }
