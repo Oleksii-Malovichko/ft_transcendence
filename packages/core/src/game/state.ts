@@ -1,10 +1,9 @@
 import { BALL, FIELD, RULES } from "./constants.js";
+import { DEFAULT_SETTINGS, type GameSettings } from "./settings.js";
 
 export type Side = "left" | "right";
 
-
 export type PaddleInput = -1 | 0 | 1;
-
 
 export type Inputs = Readonly<Record<Side, PaddleInput>>;
 
@@ -18,6 +17,7 @@ export interface Ball {
 }
 
 export interface GameState {
+  readonly settings: GameSettings;
   readonly ball: Ball;
 
   readonly paddles: Readonly<Record<Side, number>>;
@@ -30,21 +30,28 @@ export interface GameState {
 
 export const NO_INPUT: Inputs = { left: 0, right: 0 };
 
-export function serveBall(towards: Side, goingDown: boolean): Ball {
+export function serveBall(
+  towards: Side,
+  goingDown: boolean,
+  speed: number = BALL.serveSpeed,
+): Ball {
   const horizontal = towards === "left" ? -1 : 1;
   const vertical = goingDown ? 1 : -1;
   return {
     x: FIELD.width / 2,
     y: FIELD.height / 2,
-    vx: horizontal * BALL.serveSpeed * Math.cos(BALL.serveAngle),
-    vy: vertical * BALL.serveSpeed * Math.sin(BALL.serveAngle),
+    vx: horizontal * speed * Math.cos(BALL.serveAngle),
+    vy: vertical * speed * Math.sin(BALL.serveAngle),
   };
 }
 
-
-export function createInitialState(firstServe: Side = "left"): GameState {
+export function createInitialState(
+  firstServe: Side = "left",
+  settings: GameSettings = DEFAULT_SETTINGS,
+): GameState {
   return {
-    ball: serveBall(firstServe, true),
+    settings,
+    ball: serveBall(firstServe, true, settings.ballSpeed),
     paddles: { left: FIELD.height / 2, right: FIELD.height / 2 },
     score: { left: 0, right: 0 },
     serveIn: RULES.serveDelay,
