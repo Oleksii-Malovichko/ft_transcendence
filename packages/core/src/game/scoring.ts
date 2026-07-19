@@ -1,4 +1,3 @@
-
 import { FIELD, RULES } from "./constants.js";
 import { serveBall, type Ball, type GameState, type Side } from "./state.js";
 
@@ -8,9 +7,12 @@ export function scoringSide(ball: Ball): Side | null {
   return null;
 }
 
-export function findWinner(score: Readonly<Record<Side, number>>): Side | null {
-  if (score.left >= RULES.scoreLimit) return "left";
-  if (score.right >= RULES.scoreLimit) return "right";
+export function findWinner(
+  score: Readonly<Record<Side, number>>,
+  scoreLimit: number = RULES.scoreLimit,
+): Side | null {
+  if (score.left >= scoreLimit) return "left";
+  if (score.right >= scoreLimit) return "right";
   return null;
 }
 
@@ -20,8 +22,8 @@ export function awardPoint(state: GameState, scorer: Side): GameState {
   return {
     ...state,
     score,
-    ball: serveBall(loser, (score.left + score.right) % 2 === 0),
+    ball: serveBall(loser, (score.left + score.right) % 2 === 0, state.settings.ballSpeed),
     serveIn: RULES.serveDelay,
-    winner: findWinner(score),
+    winner: findWinner(score, state.settings.scoreLimit),
   };
 }
