@@ -4,8 +4,9 @@ import { GameCanvas } from "./GameCanvas";
 import { GameOver, Scoreboard } from "./Hud";
 import { LOCAL_BINDINGS, ONLINE_RIGHT_BINDINGS, SOLO_BINDINGS } from "./keys";
 import { Lobby } from "./Lobby";
-import { LOCAL_MODE, type UiMode } from "./mode";
+import { LOCAL_MODE, settingsOf, type UiMode, withSettings } from "./mode";
 import { ModePicker } from "./ModePicker";
+import { SettingsForm } from "./SettingsForm";
 import { RulesPanel } from "./RulesPanel";
 import { ServeCountdown } from "./ServeCountdown";
 import { TouchControls } from "./TouchControls";
@@ -27,6 +28,12 @@ export function PlayScreen() {
   return (
     <div className="flex w-full max-w-3xl flex-col items-center gap-4">
       <ModePicker mode={mode} onChange={choose} />
+      {mode.kind !== "online" && (
+        <SettingsForm
+          settings={settingsOf(mode)}
+          onChange={(settings) => choose(withSettings(mode, settings))}
+        />
+      )}
       {searching ? (
         <Lobby onCancel={cancelSearch} />
       ) : (
