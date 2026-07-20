@@ -6,4 +6,6 @@ export { step } from "./step.js";
 export { GAME_EVENTS, InputMessageSchema, JoinRequestSchema } from "./protocol.js";
 export type { InputMessage, JoinReply, JoinRequest } from "./protocol.js";
 export { DEFAULT_SETTINGS, GameSettingsSchema } from "./settings.js";
+export { DEFAULT_THEME, THEMES, ThemeNameSchema } from "./themes.js";
+export type { Theme, ThemeName } from "./themes.js";
 export type { GameSettings } from "./settings.js";
