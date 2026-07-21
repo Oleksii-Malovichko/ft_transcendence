@@ -1,11 +1,13 @@
 "use client";
-import type { Side } from "@ft/core";
+import { type Side, THEMES, type ThemeName } from "@ft/core";
+import { useState } from "react";
 import { GameCanvas } from "./GameCanvas";
 import { GameOver, Scoreboard } from "./Hud";
 import { LOCAL_BINDINGS, ONLINE_RIGHT_BINDINGS, SOLO_BINDINGS } from "./keys";
 import { Lobby } from "./Lobby";
 import { LOCAL_MODE, settingsOf, type UiMode, withSettings } from "./mode";
 import { ModePicker } from "./ModePicker";
+import { ThemePicker } from "./ThemePicker";
 import { SettingsForm } from "./SettingsForm";
 import { RulesPanel } from "./RulesPanel";
 import { ServeCountdown } from "./ServeCountdown";
@@ -22,6 +24,7 @@ function bindingsFor(mode: UiMode, side: Side | null) {
 export function PlayScreen() {
   const { mode, choose, stateRef, hud, online, sendInput, restart, cancelSearch } =
     useGameSocket(LOCAL_MODE);
+  const [theme, setTheme] = useState<ThemeName>("classic");
   useKeyboardInput(bindingsFor(mode, online.side), sendInput);
   const searching = mode.kind === "online" && online.status !== "playing";
 
@@ -45,12 +48,15 @@ export function PlayScreen() {
           )}
           <Scoreboard score={hud.score} />
           <div className="relative w-full">
-            <GameCanvas stateRef={stateRef} />
+            <GameCanvas stateRef={stateRef} theme={THEMES[theme]} />
             <ServeCountdown stateRef={stateRef} />
             {hud.winner && <GameOver winner={hud.winner} onRestart={restart} />}
           </div>
           <TouchControls side={online.side ?? "left"} onInput={sendInput} />
-          <Controls mode={mode} />
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <Controls mode={mode} />
+            <ThemePicker theme={theme} onChange={setTheme} />
+          </div>
           <RulesPanel />
         </>
       )}
