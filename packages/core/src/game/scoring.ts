@@ -24,6 +24,9 @@ export function awardPoint(state: GameState, scorer: Side): GameState {
     score,
     ball: serveBall(loser, (score.left + score.right) % 2 === 0, state.settings.ballSpeed),
     serveIn: RULES.serveDelay,
+    powerUps: [],
+    effects: [],
+    lastHitBy: null,
     winner: findWinner(score, state.settings.scoreLimit),
   };
 }

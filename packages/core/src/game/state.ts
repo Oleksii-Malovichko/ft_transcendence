@@ -1,4 +1,6 @@
 import { BALL, FIELD, RULES } from "./constants.js";
+import { POWER_UPS } from "./power-ups.js";
+import type { Effect, PowerUp } from "./power-ups.js";
 import { DEFAULT_SETTINGS, type GameSettings } from "./settings.js";
 
 export type Side = "left" | "right";
@@ -26,6 +28,10 @@ export interface GameState {
   readonly serveIn: number;
   /** null while the game is running. */
   readonly winner: Side | null;
+  readonly powerUps: readonly PowerUp[];
+  readonly effects: readonly Effect[];
+  readonly nextPowerUpIn: number;
+  readonly lastHitBy: Side | null;
 }
 
 export const NO_INPUT: Inputs = { left: 0, right: 0 };
@@ -56,5 +62,9 @@ export function createInitialState(
     score: { left: 0, right: 0 },
     serveIn: RULES.serveDelay,
     winner: null,
+    powerUps: [],
+    effects: [],
+    nextPowerUpIn: POWER_UPS.every,
+    lastHitBy: null,
   };
 }
