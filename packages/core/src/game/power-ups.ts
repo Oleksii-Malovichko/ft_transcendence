@@ -51,3 +51,42 @@ export function touchedPowerUp(ball: Ball, powerUps: readonly PowerUp[]): PowerU
     (powerUp) => Math.abs(ball.x - powerUp.x) <= reach && Math.abs(ball.y - powerUp.y) <= reach,
   );
 }
+
+/** A collected "bigger paddle" makes that player's paddle this much taller. */
+export const BIG_PADDLE_FACTOR = 1.6;
+
+/** The effects after `dt` seconds, with the finished ones dropped. */
+export function tickEffects(effects: readonly Effect[], dt: number): Effect[] {
+  return effects
+    .map((effect) => ({ ...effect, secondsLeft: effect.secondsLeft - dt }))
+    .filter((effect) => effect.secondsLeft > 0);
+}
+
+/** The effect a collected bonus starts, for the player who collected it. */
+export function effectOf(powerUp: PowerUp, collector: Side | null): Effect {
+  return {
+    kind: powerUp.kind,
+    // "fastBall" changes the ball itself, so it belongs to nobody.
+    side: powerUp.kind === "bigPaddle" ? collector : null,
+    secondsLeft: POWER_UPS.lasts,
+  };
+}
+
+export function hasEffect(
+  effects: readonly Effect[],
+  kind: PowerUpKind,
+  side: Side | null = null,
+): boolean {
+  return effects.some(
+    (effect) => effect.kind === kind && (kind !== "bigPaddle" || effect.side === side),
+  );
+}
+
+/** One side's paddle height, bonuses included: what the game (and the browser) must use. */
+export function paddleHeightFor(
+  state: { settings: { paddleHeight: number }; effects: readonly Effect[] },
+  side: Side,
+): number {
+  const base = state.settings.paddleHeight;
+  return hasEffect(state.effects, "bigPaddle", side) ? base * BIG_PADDLE_FACTOR : base;
+}

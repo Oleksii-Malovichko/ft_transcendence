@@ -1,32 +1,52 @@
 import { bounceOffWalls, moveBall } from "./ball.js";
 import { collideWithPaddles } from "./collision.js";
 import { movePaddle } from "./paddle.js";
-import { POWER_UPS, spawnPowerUp, touchedPowerUp } from "./power-ups.js";
+import {
+  effectOf,
+  paddleHeightFor,
+  POWER_UPS,
+  spawnPowerUp,
+  tickEffects,
+  touchedPowerUp,
+} from "./power-ups.js";
 import { awardPoint, scoringSide } from "./scoring.js";
-import type { GameState, Inputs } from "./state.js";
+import type { Ball, GameState, Inputs, Side } from "./state.js";
 
 export function step(state: GameState, inputs: Inputs, dt: number): GameState {
   if (state.winner !== null) return state;
 
-  const { paddleHeight } = state.settings;
+  const heights = { left: paddleHeightFor(state, "left"), right: paddleHeightFor(state, "right") };
   const paddles = {
-    left: movePaddle(state.paddles.left, inputs.left, dt, paddleHeight),
-    right: movePaddle(state.paddles.right, inputs.right, dt, paddleHeight),
+    left: movePaddle(state.paddles.left, inputs.left, dt, heights.left),
+    right: movePaddle(state.paddles.right, inputs.right, dt, heights.right),
   };
   if (state.serveIn > 0) {
     return { ...state, paddles, serveIn: Math.max(0, state.serveIn - dt) };
   }
 
   const flying = bounceOffWalls(moveBall(state.ball, dt));
-  const ball = collideWithPaddles(flying, paddles, paddleHeight);
-  // The ball bounced off a paddle: remember whose, for the bonuses below.
-  const lastHitBy = ball === flying ? state.lastHitBy : flying.vx < 0 ? "left" : "right";
-  const moved: GameState = { ...withPowerUps(state, ball, dt), paddles, ball, lastHitBy };
+  const side: Side = flying.vx < 0 ? "left" : "right";
+  const ball = collideWithPaddles(flying, paddles, heights[side]);
+  // The ball bounced off a paddle: that player collects what it runs into.
+  const lastHitBy = ball === flying ? state.lastHitBy : side;
+
+  const withBonuses = applyPowerUps(
+    { ...state, effects: tickEffects(state.effects, dt) },
+    ball,
+    dt,
+    lastHitBy,
+  );
+  const moved: GameState = { ...withBonuses, paddles, ball, lastHitBy };
   const scorer = scoringSide(ball);
   return scorer === null ? moved : awardPoint(moved, scorer);
 }
 
-function withPowerUps(state: GameState, ball: GameState["ball"], dt: number): GameState {
+function applyPowerUps(
+  state: GameState,
+  ball: Ball,
+  dt: number,
+  collector: Side | null,
+): GameState {
   if (!state.settings.powerUps) return state;
   const due = state.nextPowerUpIn - dt;
   const onField =
@@ -35,6 +55,7 @@ function withPowerUps(state: GameState, ball: GameState["ball"], dt: number): Ga
   return {
     ...state,
     powerUps: taken ? onField.filter((powerUp) => powerUp.id !== taken.id) : onField,
+    effects: taken ? [...state.effects, effectOf(taken, collector)] : state.effects,
     nextPowerUpIn: due <= 0 ? POWER_UPS.every : due,
   };
 }

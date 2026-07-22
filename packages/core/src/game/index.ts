@@ -6,6 +6,8 @@ export { step } from "./step.js";
 export { GAME_EVENTS, InputMessageSchema, JoinRequestSchema } from "./protocol.js";
 export type { InputMessage, JoinReply, JoinRequest } from "./protocol.js";
 export { DEFAULT_SETTINGS, GameSettingsSchema } from "./settings.js";
+export { paddleHeightFor, POWER_UPS } from "./power-ups.js";
+export type { Effect, PowerUp, PowerUpKind } from "./power-ups.js";
 export { DEFAULT_THEME, THEMES, ThemeNameSchema } from "./themes.js";
 export type { Theme, ThemeName } from "./themes.js";
 export type { GameSettings } from "./settings.js";
