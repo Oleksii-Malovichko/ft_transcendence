@@ -3,13 +3,17 @@ import { collideWithPaddles } from "./collision.js";
 import { movePaddle } from "./paddle.js";
 import {
   effectOf,
+  FAST_BALL_FACTOR,
+  hasEffect,
   paddleHeightFor,
   POWER_UPS,
   spawnPowerUp,
+  scaleBall,
   tickEffects,
   touchedPowerUp,
 } from "./power-ups.js";
 import { awardPoint, scoringSide } from "./scoring.js";
+import type { Effect } from "./power-ups.js";
 import type { Ball, GameState, Inputs, Side } from "./state.js";
 
 export function step(state: GameState, inputs: Inputs, dt: number): GameState {
@@ -36,8 +40,9 @@ export function step(state: GameState, inputs: Inputs, dt: number): GameState {
     dt,
     lastHitBy,
   );
-  const moved: GameState = { ...withBonuses, paddles, ball, lastHitBy };
-  const scorer = scoringSide(ball);
+  const speeded = withSpeedChange(state.effects, withBonuses.effects, ball);
+  const moved: GameState = { ...withBonuses, paddles, ball: speeded, lastHitBy };
+  const scorer = scoringSide(speeded);
   return scorer === null ? moved : awardPoint(moved, scorer);
 }
 
@@ -58,4 +63,12 @@ function applyPowerUps(
     effects: taken ? [...state.effects, effectOf(taken, collector)] : state.effects,
     nextPowerUpIn: due <= 0 ? POWER_UPS.every : due,
   };
+}
+
+/** Scales the ball when a "faster ball" starts or ends during this tick. */
+function withSpeedChange(before: readonly Effect[], after: readonly Effect[], ball: Ball): Ball {
+  const was = hasEffect(before, "fastBall");
+  const now = hasEffect(after, "fastBall");
+  if (was === now) return ball;
+  return scaleBall(ball, now ? FAST_BALL_FACTOR : 1 / FAST_BALL_FACTOR);
 }

@@ -54,6 +54,8 @@ export function touchedPowerUp(ball: Ball, powerUps: readonly PowerUp[]): PowerU
 
 /** A collected "bigger paddle" makes that player's paddle this much taller. */
 export const BIG_PADDLE_FACTOR = 1.6;
+/** A collected "faster ball" speeds the ball up by this much, while it lasts. */
+export const FAST_BALL_FACTOR = 1.25;
 
 /** The effects after `dt` seconds, with the finished ones dropped. */
 export function tickEffects(effects: readonly Effect[], dt: number): Effect[] {
@@ -89,4 +91,9 @@ export function paddleHeightFor(
 ): number {
   const base = state.settings.paddleHeight;
   return hasEffect(state.effects, "bigPaddle", side) ? base * BIG_PADDLE_FACTOR : base;
+}
+
+/** The same ball, flying `factor` times faster (or slower, below 1). */
+export function scaleBall(ball: Ball, factor: number): Ball {
+  return { ...ball, vx: ball.vx * factor, vy: ball.vy * factor };
 }
