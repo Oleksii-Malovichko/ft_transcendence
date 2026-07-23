@@ -1,6 +1,7 @@
 "use client";
 import { type Side, THEMES, type ThemeName } from "@ft/core";
 import { useState } from "react";
+import { EffectsBar } from "./EffectsBar";
 import { GameCanvas } from "./GameCanvas";
 import { GameOver, Scoreboard } from "./Hud";
 import { LOCAL_BINDINGS, ONLINE_RIGHT_BINDINGS, SOLO_BINDINGS } from "./keys";
@@ -47,6 +48,7 @@ export function PlayScreen() {
             </p>
           )}
           <Scoreboard score={hud.score} />
+          <EffectsBar stateRef={stateRef} />
           <div className="relative w-full">
             <GameCanvas stateRef={stateRef} theme={THEMES[theme]} />
             <ServeCountdown stateRef={stateRef} />

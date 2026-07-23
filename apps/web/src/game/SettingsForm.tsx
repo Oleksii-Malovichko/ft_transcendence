@@ -41,6 +41,15 @@ export function SettingsForm({
           />
         </label>
       ))}
+      <label className="flex items-center gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={settings.powerUps}
+          onChange={(event) => onChange({ ...settings, powerUps: event.target.checked })}
+          className="accent-accent"
+        />
+        Bonuses
+      </label>
       <button
         type="button"
         onClick={() => onChange(DEFAULT_SETTINGS)}
