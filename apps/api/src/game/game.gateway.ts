@@ -36,7 +36,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly matchmaking: MatchmakingService,
   ) {}
 
-  
   async handleConnection(client: Socket): Promise<void> {
     const user = await this.auth.userFromCookieHeader(client.handshake.headers.cookie);
     client.data.user = user ?? undefined;
@@ -53,8 +52,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
     const room =
       request.data.mode === "ai"
-        ? this.rooms.createAi(client.id, request.data.difficulty, publish, playerOf(client)?.id)
-        : this.rooms.createLocal(client.id, publish, playerOf(client)?.id);
+        ? this.rooms.createAi(
+            client.id,
+            request.data.difficulty,
+            publish,
+            playerOf(client)?.id,
+            request.data.settings,
+          )
+        : this.rooms.createLocal(client.id, publish, playerOf(client)?.id, request.data.settings);
     // Socket.IO rooms group the connections that receive the room's states.
     void client.join(room.id);
     return { roomId: room.id };

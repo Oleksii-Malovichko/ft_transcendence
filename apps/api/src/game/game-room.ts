@@ -1,5 +1,7 @@
 import {
   createInitialState,
+  DEFAULT_SETTINGS,
+  type GameSettings,
   type GameState,
   type Inputs,
   NO_INPUT,
@@ -13,7 +15,7 @@ const STEP = 1 / TICK_RATE;
 const MAX_CATCH_UP_SECONDS = 0.25;
 
 export class GameRoom {
-  private state: GameState = createInitialState();
+  private state: GameState;
   private inputs: Inputs = NO_INPUT;
   private pending = 0; // real time (seconds) not simulated yet
   private lastTurn = 0;
@@ -22,7 +24,10 @@ export class GameRoom {
   constructor(
     readonly id: string,
     private readonly onTick: (state: GameState) => void = () => {},
-  ) {}
+    settings: GameSettings = DEFAULT_SETTINGS,
+  ) {
+    this.state = createInitialState("left", settings);
+  }
 
   get current(): GameState {
     return this.state;

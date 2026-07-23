@@ -1,13 +1,19 @@
-import { FIELD, type GameState } from "@ft/core";
+import { FIELD, type GameState, type Theme, THEMES } from "@ft/core";
 import { type RefObject, useEffect, useRef } from "react";
 import { drawGame } from "./render";
 
 type CanvasRef = RefObject<HTMLCanvasElement | null>;
 
-export function GameCanvas({ stateRef }: { stateRef: RefObject<GameState> }) {
+export function GameCanvas({
+  stateRef,
+  theme = THEMES.classic,
+}: {
+  stateRef: RefObject<GameState>;
+  theme?: Theme;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useSharpResolution(canvasRef);
-  useDrawLoop(canvasRef, stateRef);
+  useDrawLoop(canvasRef, stateRef, theme);
   return (
     <canvas
       ref={canvasRef}
@@ -35,7 +41,7 @@ function useSharpResolution(canvasRef: CanvasRef): void {
   }, [canvasRef]);
 }
 
-function useDrawLoop(canvasRef: CanvasRef, stateRef: RefObject<GameState>): void {
+function useDrawLoop(canvasRef: CanvasRef, stateRef: RefObject<GameState>, theme: Theme): void {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -43,9 +49,9 @@ function useDrawLoop(canvasRef: CanvasRef, stateRef: RefObject<GameState>): void
     let frame = requestAnimationFrame(function draw() {
       const scale = canvas.width / FIELD.width; // screen pixels per field unit
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
-      drawGame(ctx, stateRef.current);
+      drawGame(ctx, stateRef.current, theme);
       frame = requestAnimationFrame(draw);
     });
     return () => cancelAnimationFrame(frame);
-  }, [canvasRef, stateRef]);
+  }, [canvasRef, stateRef, theme]);
 }
