@@ -79,7 +79,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const pair = this.matchmaking.join({
       clientId: client.id,
       userId: user?.id,
-      label: user?.email ?? "Guest",
+      label: user?.displayName ?? (user ? "Player" : "Guest"),
     });
     if (!pair) {
       client.emit(MATCH_EVENTS.waiting);
