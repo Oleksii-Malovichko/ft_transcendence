@@ -17,7 +17,8 @@ model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   /// argon2id hash; the plain password is never stored.
-  passwordHash String   @map("password_hash")
+  passwordHash String?  @map("password_hash")
+  fortyTwoId   Int?     @unique @map("forty_two_id")
   displayName  String?  @unique @map("display_name")
   hasAvatar    Boolean  @default(false) @map("has_avatar")
   createdAt    DateTime @default(now()) @map("created_at")
