@@ -1,23 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { parseEnv } from "./env.js";
 
-const DATABASE_URL = "postgresql://user:pass@localhost:5432/db";
+const REQUIRED = {
+  DATABASE_URL: "postgresql://user:pass@localhost:5432/db",
+  JWT_SECRET: "x".repeat(32),
+};
 
 describe("parseEnv", () => {
   it("applies the defaults", () => {
-    expect(parseEnv({ DATABASE_URL })).toEqual({
+    expect(parseEnv(REQUIRED)).toEqual({
       NODE_ENV: "development",
       API_PORT: 3001,
-      DATABASE_URL,
+      UPLOADS_DIR: "./uploads",
+      FORTY_TWO_API_URL: "https://api.intra.42.fr",
+      WEB_ORIGIN: "http://localhost:3000",
+      ...REQUIRED,
     });
   });
 
   it("converts API_PORT from text to a number", () => {
-    expect(parseEnv({ DATABASE_URL, API_PORT: "4000" }).API_PORT).toBe(4000);
+    expect(parseEnv({ ...REQUIRED, API_PORT: "4000" }).API_PORT).toBe(4000);
   });
 
   it("rejects a database URL that is not PostgreSQL", () => {
-    expect(() => parseEnv({ DATABASE_URL: "mysql://x" })).toThrow(/must start with postgresql/);
+    expect(() => parseEnv({ ...REQUIRED, DATABASE_URL: "mysql://x" })).toThrow(
+      /must start with postgresql/,
+    );
+  });
+
+  it("rejects a JWT secret shorter than 32 characters", () => {
+    expect(() => parseEnv({ ...REQUIRED, JWT_SECRET: "short" })).toThrow(/JWT_SECRET/);
   });
 
   it("lists every problem at once", () => {
@@ -27,6 +39,6 @@ describe("parseEnv", () => {
   });
 
   it("returns a frozen object, so settings can't be changed by accident", () => {
-    expect(Object.isFrozen(parseEnv({ DATABASE_URL }))).toBe(true);
+    expect(Object.isFrozen(parseEnv(REQUIRED))).toBe(true);
   });
 });
