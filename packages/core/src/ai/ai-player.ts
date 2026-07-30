@@ -1,4 +1,5 @@
 import { BALL, FIELD, PADDLE } from "../game/constants.js";
+import type { PowerUp } from "../game/power-ups.js";
 import { movePaddle, paddleX } from "../game/paddle.js";
 import { paddleHeightFor } from "../game/power-ups.js";
 import type { GameState, PaddleInput, Side } from "../game/state.js";
@@ -9,6 +10,8 @@ import { decide } from "./decide.js";
 import { predictBallY } from "./predict.js";
 
 const CENTER = FIELD.height / 2;
+/** How far off-centre the AI hits the ball when it is playing for a bonus. */
+const AIM_SHIFT = 14;
 
 export class AiPlayer {
   private clock = 0; //            seconds of game time, as the AI counts them
@@ -65,8 +68,23 @@ export class AiPlayer {
     const coming = this.side === "left" ? state.ball.vx < 0 : state.ball.vx > 0;
     const predicted = coming ? predictBallY(state.ball, this.faceX) : null;
     // Ball going the other way: walk back to the middle, like a player would.
-    return predicted === null
-      ? CENTER
-      : withAimError(predicted, this.effective.aimError, this.random);
+    if (predicted === null) return CENTER;
+    const aimed = withAimError(predicted, this.effective.aimError, this.random);
+    return aimed + this.shiftTowardsBonus(state, predicted);
+  }
+  private shiftTowardsBonus(state: GameState, predicted: number): number {
+    const bonus = this.reachableBonus(state);
+    if (!bonus) return 0;
+    const room = this.paddleHeight / 2 - AIM_SHIFT;
+    if (Math.abs(predicted - state.paddles[this.side]) > room) return 0;
+    return bonus.y < predicted ? AIM_SHIFT : -AIM_SHIFT;
+  }
+
+  /** A bonus in the half its return will fly through. */
+  private reachableBonus(state: GameState): PowerUp | undefined {
+    const middle = FIELD.width / 2;
+    return state.powerUps.find((powerUp) =>
+      this.side === "left" ? powerUp.x > middle : powerUp.x < middle,
+    );
   }
 }
