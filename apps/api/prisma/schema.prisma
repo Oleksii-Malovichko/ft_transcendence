@@ -27,6 +27,7 @@ model User {
   /// Games this user played, on one side or the other.
   matchesAsLeft  Match[] @relation("LeftPlayer")
   matchesAsRight Match[] @relation("RightPlayer")
+  tournamentSeats TournamentPlayer[]
 
   @@map("users")
 }
@@ -49,4 +50,43 @@ model Match {
   @@index([leftUserId])
   @@index([rightUserId])
   @@map("matches")
+}
+
+/// A single-elimination tournament: 4 or 8 players, one winner.
+///
+/// The bracket itself is not stored: it follows from the seats, and core
+/// rebuilds it (tournament/bracket.ts). Storing both would mean keeping two
+/// truths in step, and they would drift the first time something crashed.
+model Tournament {
+  id        Int      @id @default(autoincrement())
+  name      String
+  /// 4 or 8.
+  size      Int
+  /// "open" while players register, then "running", then "finished".
+  status    String   @default("open")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  players TournamentPlayer[]
+
+  @@map("tournaments")
+}
+
+/// One seat in a tournament. The alias is the name shown in the bracket,
+/// which the subject asks for; a guest can hold a seat without an account.
+model TournamentPlayer {
+  id           Int    @id @default(autoincrement())
+  tournamentId Int    @map("tournament_id")
+  userId       Int?   @map("user_id")
+  alias        String
+  /// Position in the bracket, 0-based: seats 0 and 1 meet in the first round.
+  seat         Int
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// No two aliases, no two accounts and no two players on the same seat.
+  @@unique([tournamentId, alias])
+  @@unique([tournamentId, userId])
+  @@unique([tournamentId, seat])
+  @@map("tournament_players")
 }
