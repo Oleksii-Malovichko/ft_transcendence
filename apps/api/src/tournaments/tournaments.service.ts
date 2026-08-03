@@ -1,5 +1,6 @@
 import {
   buildBracket,
+  drawSeats,
   championOf,
   type CreateTournament,
   nextMatch,
@@ -7,7 +8,8 @@ import {
   type TournamentStatus,
   type TournamentSummary,
 } from "@ft/core";
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "../generated/prisma/client.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 @Injectable()
@@ -26,6 +28,53 @@ export class TournamentsService {
       include: { _count: { select: { players: true } } },
     });
     return rows.map((row) => ({ ...toSummary(row), registered: row._count.players }));
+  }
+
+  async join(tournamentId: number, alias: string, userId: number): Promise<TournamentDetail> {
+    await this.prisma
+      .$transaction(async (tx) => {
+        const tournament = await tx.tournament.findUnique({
+          where: { id: tournamentId },
+          include: { players: { select: { id: true } } },
+        });
+        if (!tournament) throw new NotFoundException("No such tournament");
+        if (tournament.status !== "open") throw new ConflictException("Registration is closed");
+        const taken = tournament.players.length;
+        if (taken >= tournament.size) throw new ConflictException("This tournament is full");
+
+        await tx.tournamentPlayer.create({
+          data: { tournamentId, userId, alias, seat: taken },
+        });
+        if (taken + 1 === tournament.size) {
+          await this.drawAndStart(tx, tournamentId, tournament.size);
+        }
+      })
+      .catch((error: unknown) => {
+        throw asJoinError(error);
+      });
+    return (await this.detail(tournamentId))!;
+  }
+
+  /** Shuffles the seats and opens the bracket. */
+  private async drawAndStart(
+    tx: Prisma.TransactionClient,
+    tournamentId: number,
+    size: number,
+  ): Promise<void> {
+    const players = await tx.tournamentPlayer.findMany({
+      where: { tournamentId },
+      orderBy: { id: "asc" },
+    });
+    const seats = drawSeats(size);
+    // Seats are unique per tournament, so they cannot be swapped in place:
+    // park them out of the way first, then write the drawn ones.
+    for (const [index, player] of players.entries()) {
+      await tx.tournamentPlayer.update({ where: { id: player.id }, data: { seat: -1 - index } });
+    }
+    for (const [index, player] of players.entries()) {
+      await tx.tournamentPlayer.update({ where: { id: player.id }, data: { seat: seats[index]! } });
+    }
+    await tx.tournament.update({ where: { id: tournamentId }, data: { status: "running" } });
   }
 
   /** One tournament with its bracket, or null when there is no such id. */
@@ -63,4 +112,15 @@ function toSummary(row: {
     status: row.status as TournamentStatus,
     registered: 0,
   };
+}
+
+/** Turns a refused insert into the reason a player will understand. */
+function asJoinError(error: unknown): unknown {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    const fields = String(error.meta?.["target"] ?? "");
+    return new ConflictException(
+      fields.includes("alias") ? "That alias is taken" : "You already have a seat",
+    );
+  }
+  return error;
 }
