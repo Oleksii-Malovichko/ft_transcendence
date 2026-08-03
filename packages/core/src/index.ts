@@ -8,3 +8,4 @@ export { decide } from "./decide.js";
 export { AI_PRESETS, DIFFICULTIES, DifficultySchema } from "./presets.js";
 export type { Difficulty } from "./presets.js";
 export * from "./schemas/api.js";
+export * from "./tournament/index.js";
