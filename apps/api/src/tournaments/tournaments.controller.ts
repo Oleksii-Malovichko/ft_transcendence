@@ -49,7 +49,12 @@ export class TournamentsController {
   ): Promise<TournamentSummary> {
     return this.tournaments.create(input);
   }
-  /** Take a seat.  200 bracket · 400 invalid alias · 401 guest · 404 · 409 full or taken */
+  /**
+   * Take a seat.  201 bracket · 400 invalid alias · 401 guest · 404 · 409 full or taken
+   *
+   * 201, not 200: joining creates something (the seat), and the answer is the
+   * tournament as it now stands, bracket included.
+   */
   @Post(":id/players")
   @UseGuards(JwtAuthGuard)
   join(
