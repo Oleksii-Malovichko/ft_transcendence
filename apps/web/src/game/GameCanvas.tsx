@@ -1,19 +1,25 @@
-import { FIELD, type GameState, type Theme, THEMES } from "@ft/core";
+import { FIELD, type GameState, TICK_RATE, type Theme, THEMES } from "@ft/core";
+import { blend } from "./interpolate";
 import { type RefObject, useEffect, useRef } from "react";
 import { drawGame } from "./render";
 
 type CanvasRef = RefObject<HTMLCanvasElement | null>;
 
+export interface CanvasFeed {
+  stateRef: RefObject<GameState>;
+  previousRef?: RefObject<GameState>;
+  arrivedAt?: RefObject<number>;
+}
+
 export function GameCanvas({
   stateRef,
+  previousRef,
+  arrivedAt,
   theme = THEMES.classic,
-}: {
-  stateRef: RefObject<GameState>;
-  theme?: Theme;
-}) {
+}: CanvasFeed & { theme?: Theme }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useSharpResolution(canvasRef);
-  useDrawLoop(canvasRef, stateRef, theme);
+  useDrawLoop(canvasRef, { stateRef, previousRef, arrivedAt }, theme);
   return (
     <canvas
       ref={canvasRef}
@@ -41,7 +47,12 @@ function useSharpResolution(canvasRef: CanvasRef): void {
   }, [canvasRef]);
 }
 
-function useDrawLoop(canvasRef: CanvasRef, stateRef: RefObject<GameState>, theme: Theme): void {
+function progress(feed: CanvasFeed): number {
+  if (!feed.arrivedAt?.current) return 1;
+  return (performance.now() - feed.arrivedAt.current) / (1000 / TICK_RATE);
+}
+
+function useDrawLoop(canvasRef: CanvasRef, feed: CanvasFeed, theme: Theme): void {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -49,9 +60,11 @@ function useDrawLoop(canvasRef: CanvasRef, stateRef: RefObject<GameState>, theme
     let frame = requestAnimationFrame(function draw() {
       const scale = canvas.width / FIELD.width; // screen pixels per field unit
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
-      drawGame(ctx, stateRef.current, theme);
+      const newer = feed.stateRef.current;
+      const older = feed.previousRef?.current ?? newer;
+      drawGame(ctx, blend(older, newer, progress(feed)), theme);
       frame = requestAnimationFrame(draw);
     });
     return () => cancelAnimationFrame(frame);
-  }, [canvasRef, stateRef, theme]);
+  }, [canvasRef, feed, theme]);
 }
