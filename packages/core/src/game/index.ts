@@ -4,6 +4,15 @@ export type { Ball, GameState, Inputs, PaddleInput, Side } from "./state.js";
 export { paddleX } from "./paddle.js";
 export { step } from "./step.js";
 export { GAME_EVENTS, InputMessageSchema, JoinRequestSchema } from "./protocol.js";
+export type {
+  GameForfeited,
+  GamePaused,
+  InputMessage,
+  JoinReply,
+  JoinRequest,
+  MatchFound,
+  MatchMode,
+} from "./protocol.js";
 export type { InputMessage, JoinReply, JoinRequest } from "./protocol.js";
 export { DEFAULT_SETTINGS, GameSettingsSchema } from "./settings.js";
 export { FAST_BALL_FACTOR, hasEffect, paddleHeightFor, POWER_UPS } from "./power-ups.js";
