@@ -1,9 +1,10 @@
 import {
   buildBracket,
   drawSeats,
-  championOf,
+  championOf as findChampion,
   type CreateTournament,
   nextMatch,
+  reportWinner,
   type TournamentDetail,
   type TournamentStatus,
   type TournamentSummary,
@@ -35,7 +36,10 @@ export class TournamentsService {
       .$transaction(async (tx) => {
         const tournament = await tx.tournament.findUnique({
           where: { id: tournamentId },
-          include: { players: { select: { id: true } } },
+          include: {
+            players: { orderBy: { seat: "asc" } },
+            results: { orderBy: [{ round: "asc" }, { slot: "asc" }] },
+          },
         });
         if (!tournament) throw new NotFoundException("No such tournament");
         if (tournament.status !== "open") throw new ConflictException("Registration is closed");
@@ -87,14 +91,18 @@ export class TournamentsService {
     const aliasesBySeat = Array.from({ length: row.size }, (_, seat) => {
       return row.players.find((player) => player.seat === seat)?.alias ?? null;
     });
-    const bracket = buildBracket(aliasesBySeat);
+    // The bracket comes from the seats; the stored results move the winners up.
+    const bracket = row.results.reduce(
+      (current, result) => reportWinner(current, result.round, result.slot, result.winnerAlias),
+      buildBracket(aliasesBySeat),
+    );
     return {
       ...toSummary(row),
       registered: row.players.length,
       players: row.players.map((player) => ({ alias: player.alias, seat: player.seat })),
       bracket,
       nextMatch: nextMatch(bracket),
-      champion: championOf(bracket),
+      champion: findChampion(bracket),
     };
   }
 }
