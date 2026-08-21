@@ -59,6 +59,34 @@ export class TournamentsService {
     return (await this.detail(tournamentId))!;
   }
 
+  /**
+   * Gives a seat back. Only while registration is open: once the draw has
+   * happened, leaving would take a player out of a bracket other people are
+   * already playing in. The remaining seats are closed up, so they stay
+   * 0, 1, 2 … and the next player to arrive lands on the free one.
+   */
+  async leave(tournamentId: number, userId: number): Promise<TournamentDetail> {
+    await this.prisma.$transaction(async (tx) => {
+      const tournament = await tx.tournament.findUnique({ where: { id: tournamentId } });
+      if (!tournament) throw new NotFoundException("No such tournament");
+      if (tournament.status !== "open") {
+        throw new ConflictException("The tournament has already started");
+      }
+      const { count } = await tx.tournamentPlayer.deleteMany({ where: { tournamentId, userId } });
+      if (count === 0) throw new NotFoundException("You have no seat here");
+      const left = await tx.tournamentPlayer.findMany({
+        where: { tournamentId },
+        orderBy: { seat: "asc" },
+      });
+      for (const [index, player] of left.entries()) {
+        if (player.seat !== index) {
+          await tx.tournamentPlayer.update({ where: { id: player.id }, data: { seat: index } });
+        }
+      }
+    });
+    return (await this.detail(tournamentId))!;
+  }
+
   /** Shuffles the seats and opens the bracket. */
   private async drawAndStart(
     tx: Prisma.TransactionClient,

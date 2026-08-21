@@ -1,14 +1,15 @@
 import {
   CreateTournamentSchema,
+  JoinTournamentSchema,
   type CreateTournament,
   type JoinTournament,
-  JoinTournamentSchema,
   type TournamentDetail,
   type TournamentSummary,
 } from "@ft/core";
 import {
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -63,5 +64,15 @@ export class TournamentsController {
     @Body(new ZodValidationPipe(JoinTournamentSchema)) input: JoinTournament,
   ): Promise<TournamentDetail> {
     return this.tournaments.join(id, input.alias, user.id);
+  }
+
+  /** Give your seat back, while registration is open.  200 · 401 · 404 · 409 started */
+  @Delete(":id/players/me")
+  @UseGuards(JwtAuthGuard)
+  leave(
+    @Param("id", ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ): Promise<TournamentDetail> {
+    return this.tournaments.leave(id, user.id);
   }
 }
