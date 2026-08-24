@@ -3,6 +3,7 @@ import {
   drawSeats,
   championOf as findChampion,
   type CreateTournament,
+  type ReportResult,
   nextMatch,
   reportWinner,
   type TournamentDetail,
@@ -10,6 +11,12 @@ import {
   type TournamentSummary,
 } from "@ft/core";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Prisma } from "../generated/prisma/client.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 
@@ -107,6 +114,45 @@ export class TournamentsService {
       await tx.tournamentPlayer.update({ where: { id: player.id }, data: { seat: seats[index]! } });
     }
     await tx.tournament.update({ where: { id: tournamentId }, data: { status: "running" } });
+  }
+
+  /**
+   * Records who won one match, which moves them into the next round (the
+   * bracket is rebuilt from the results, so nothing else has to be updated).
+   * Only the match that is actually due can be reported, and only with one of
+   * its two players as the winner: a wrong report would break the bracket for
+   * everybody, and the unique index makes sure a match is decided once.
+   */
+  async recordResult(tournamentId: number, result: ReportResult): Promise<TournamentDetail> {
+    const before = await this.detail(tournamentId);
+    if (!before) throw new NotFoundException("No such tournament");
+    if (before.status !== "running") throw new ConflictException("This tournament is not running");
+    const due = before.nextMatch;
+    if (!due || due.round !== result.round || due.slot !== result.slot) {
+      throw new ConflictException("That is not the match being played");
+    }
+    if (!due.players.includes(result.winner)) {
+      throw new BadRequestException("The winner must be one of the two players");
+    }
+    await this.prisma.tournamentResult.create({
+      data: {
+        tournamentId,
+        round: result.round,
+        slot: result.slot,
+        winnerAlias: result.winner,
+      },
+    });
+    const after = (await this.detail(tournamentId))!;
+    return after.champion ? this.finish(tournamentId) : after;
+  }
+
+  /** The final is over: nothing more will be played here. */
+  private async finish(tournamentId: number): Promise<TournamentDetail> {
+    await this.prisma.tournament.update({
+      where: { id: tournamentId },
+      data: { status: "finished" },
+    });
+    return (await this.detail(tournamentId))!;
   }
 
   /** One tournament with its bracket, or null when there is no such id. */

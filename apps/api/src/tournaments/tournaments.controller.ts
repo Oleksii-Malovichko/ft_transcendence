@@ -1,7 +1,9 @@
 import {
   CreateTournamentSchema,
   JoinTournamentSchema,
+  ReportResultSchema,
   type CreateTournament,
+  type ReportResult,
   type JoinTournament,
   type TournamentDetail,
   type TournamentSummary,
@@ -74,5 +76,20 @@ export class TournamentsController {
     @CurrentUser() user: User,
   ): Promise<TournamentDetail> {
     return this.tournaments.leave(id, user.id);
+  }
+  /**
+   * Report who won the match being played.  201 bracket · 400 wrong winner ·
+   * 401 guest · 404 · 409 not the match that is due
+   *
+   * The players report it themselves for now; when the game rooms know they
+   * belong to a tournament, the server will report it instead.
+   */
+  @Post(":id/results")
+  @UseGuards(JwtAuthGuard)
+  report(
+    @Param("id", ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(ReportResultSchema)) result: ReportResult,
+  ): Promise<TournamentDetail> {
+    return this.tournaments.recordResult(id, result);
   }
 }
