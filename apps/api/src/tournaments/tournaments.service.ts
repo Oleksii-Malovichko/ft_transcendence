@@ -156,7 +156,7 @@ export class TournamentsService {
   }
 
   /** One tournament with its bracket, or null when there is no such id. */
-  async detail(id: number): Promise<TournamentDetail | null> {
+  async detail(id: number, userId?: number): Promise<TournamentDetail | null> {
     const row = await this.prisma.tournament.findUnique({
       where: { id },
       include: { players: { orderBy: { seat: "asc" } } },
@@ -176,6 +176,7 @@ export class TournamentsService {
       players: row.players.map((player) => ({ alias: player.alias, seat: player.seat })),
       bracket,
       nextMatch: nextMatch(bracket),
+      youAre: row.players.find((player) => player.userId === userId)?.alias ?? null,
       champion: findChampion(bracket),
     };
   }

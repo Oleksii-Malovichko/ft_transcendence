@@ -36,5 +36,6 @@ export interface TournamentDetail extends TournamentSummary {
   bracket: BracketMatch[];
   /** The match to play now, or null when there is nothing to play. */
   nextMatch: BracketMatch | null;
+  youAre: string | null;
   champion: string | null;
 }

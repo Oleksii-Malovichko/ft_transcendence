@@ -17,9 +17,12 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Req,
   UseGuards,
 } from "@nestjs/common";
+import { AuthService } from "../auth/auth.service.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
+import type { Request } from "express";
 import type { User } from "../generated/prisma/client.js";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { ZodValidationPipe } from "../common/zod-validation.pipe.js";
@@ -27,7 +30,10 @@ import { TournamentsService } from "./tournaments.service.js";
 
 @Controller("tournaments")
 export class TournamentsController {
-  constructor(private readonly tournaments: TournamentsService) {}
+  constructor(
+    private readonly tournaments: TournamentsService,
+    private readonly auth: AuthService,
+  ) {}
   /** Every tournament, newest first.  200 list */
   @Get()
   list(): Promise<TournamentSummary[]> {
@@ -36,8 +42,14 @@ export class TournamentsController {
 
   /** One tournament with its bracket and the match to play next.  200 · 404 */
   @Get(":id")
-  async detail(@Param("id", ParseIntPipe) id: number): Promise<TournamentDetail> {
-    const tournament = await this.tournaments.detail(id);
+  async detail(
+    @Param("id", ParseIntPipe) id: number,
+    @Req() request: Request,
+  ): Promise<TournamentDetail> {
+    // No guard here: anyone may look. But if a session cookie came along, the
+    // answer also says which of these players is the visitor.
+    const viewer = await this.auth.userFromCookieHeader(request.headers.cookie);
+    const tournament = await this.tournaments.detail(id, viewer?.id);
     if (!tournament) {
       throw new NotFoundException("No such tournament");
     }
