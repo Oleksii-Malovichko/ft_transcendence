@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { fetchTournament } from "./api";
 import { BracketView } from "./BracketView";
+import { MatchPrompt } from "./MatchPrompt";
 import { SeatPanel } from "./SeatPanel";
 
 const REFRESH_MS = 4000;
@@ -34,9 +35,7 @@ export function TournamentView({ initial }: { initial: TournamentDetail }) {
           {tournament.champion ? ` · winner: ${tournament.champion}` : ""}
         </p>
       </header>
-      <Card title="Your seat">
-        <SeatPanel tournament={tournament} onChanged={setTournament} />
-      </Card>
+      <MatchPrompt tournament={tournament} onChanged={setTournament} />
       <Card title="Your seat">
         <SeatPanel tournament={tournament} onChanged={setTournament} />
       </Card>
