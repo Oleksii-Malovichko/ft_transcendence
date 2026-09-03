@@ -14,6 +14,14 @@ export type CreateTournament = z.infer<typeof CreateTournamentSchema>;
 export const JoinTournamentSchema = z.object({ alias: DisplayNameSchema });
 export type JoinTournament = z.infer<typeof JoinTournamentSchema>;
 
+/** Reporting who won one match of the bracket. */
+export const ReportResultSchema = z.object({
+  round: z.number().int().min(0).max(3),
+  slot: z.number().int().min(0).max(3),
+  winner: DisplayNameSchema,
+});
+export type ReportResult = z.infer<typeof ReportResultSchema>;
+
 export interface TournamentSummary {
   id: number;
   name: string;
@@ -28,5 +36,6 @@ export interface TournamentDetail extends TournamentSummary {
   bracket: BracketMatch[];
   /** The match to play now, or null when there is nothing to play. */
   nextMatch: BracketMatch | null;
+  youAre: string | null;
   champion: string | null;
 }

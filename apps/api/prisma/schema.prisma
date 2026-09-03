@@ -67,6 +67,7 @@ model Tournament {
   createdAt DateTime @default(now()) @map("created_at")
 
   players TournamentPlayer[]
+  results TournamentResult[]
 
   @@map("tournaments")
 }
@@ -89,4 +90,22 @@ model TournamentPlayer {
   @@unique([tournamentId, userId])
   @@unique([tournamentId, seat])
   @@map("tournament_players")
+}
+
+/// The outcome of one bracket match. The bracket itself is still rebuilt from
+/// the seats; these rows only say who won where, which is the one thing that
+/// cannot be worked out from anything else.
+model TournamentResult {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int      @map("tournament_id")
+  round        Int
+  slot         Int
+  winnerAlias  String   @map("winner_alias")
+  decidedAt    DateTime @default(now()) @map("decided_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  /// A match is decided once.
+  @@unique([tournamentId, round, slot])
+  @@map("tournament_results")
 }
