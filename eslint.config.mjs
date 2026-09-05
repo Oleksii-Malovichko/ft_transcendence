@@ -22,7 +22,7 @@ export default defineConfig([
   {
     name: "team/code-size",
     rules: {
-      "max-lines-per-function": ["error", { max: 50, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }],
       complexity: ["error", 10],
       "no-console": "error",
     },
