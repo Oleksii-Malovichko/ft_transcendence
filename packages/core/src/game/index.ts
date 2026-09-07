@@ -13,7 +13,8 @@ export type {
   MatchFound,
   MatchMode,
 } from "./protocol.js";
-export type { InputMessage, JoinReply, JoinRequest } from "./protocol.js";
+export { MATCH_EVENTS, MATCH_MODES, TOURNAMENT_EVENTS } from "./protocol.js";
+export type { InputMessage, JoinReply, JoinRequest, PlayTournamentMatch } from "./protocol.js";
 export { DEFAULT_SETTINGS, GameSettingsSchema } from "./settings.js";
 export { FAST_BALL_FACTOR, hasEffect, paddleHeightFor, POWER_UPS } from "./power-ups.js";
 export type { Effect, PowerUp, PowerUpKind } from "./power-ups.js";

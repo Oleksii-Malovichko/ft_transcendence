@@ -22,7 +22,6 @@ export const GAME_EVENTS = {
   ping: "game:ping",
 } as const;
 
-
 export const JoinRequestSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("local"), settings: GameSettingsSchema.optional() }),
   z.object({
@@ -70,4 +69,16 @@ export interface GamePaused {
 
 export interface GameForfeited {
   winner: Side;
+}
+
+export const TOURNAMENT_EVENTS = {
+  /** browser → server: I am ready to play my tournament match. */
+  play: "tournament:play",
+  /** server → browser: waiting for the other player to be ready too. */
+  waiting: "tournament:waiting",
+} as const;
+
+/** Sent with "tournament:play": which tournament the player means. */
+export interface PlayTournamentMatch {
+  tournamentId: number;
 }
