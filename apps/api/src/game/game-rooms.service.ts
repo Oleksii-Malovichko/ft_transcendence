@@ -9,8 +9,9 @@ import {
   type PaddleInput,
   type Side,
 } from "@ft/core";
-import { Injectable, type OnModuleDestroy } from "@nestjs/common";
+import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
 import { MatchesService } from "../matches/matches.service.js";
+import { TournamentsService } from "../tournaments/tournaments.service.js";
 import { GAME_EVENTS } from "@ft/core";
 import { GameRoom } from "./game-room.js";
 
@@ -32,10 +33,22 @@ interface AwaySeat {
 /** How long a player has to come back before they lose the game. */
 export const GRACE_SECONDS = 30;
 
+/** What a finished game needs to be written down: how it was played and by whom. */
 interface RoomPlayers {
   mode: MatchMode;
   leftUserId?: number | undefined;
   rightUserId?: number | undefined;
+  /** Set when this game IS a tournament match, so its result can be reported. */
+  tournament?: TournamentSeat | undefined;
+}
+
+/** Where a game sits in a bracket, and what the two players are called there. */
+export interface TournamentSeat {
+  tournamentId: number;
+  round: number;
+  slot: number;
+  leftAlias: string;
+  rightAlias: string;
 }
 
 @Injectable()
@@ -47,8 +60,17 @@ export class GameRoomsService implements OnModuleDestroy {
   private readonly away = new Map<number, AwaySeat>();
   private notify: Notify = () => {};
 
-  constructor(private readonly matches: MatchesService) {}
+  private readonly logger = new Logger(GameRoomsService.name);
 
+  constructor(
+    private readonly matches: MatchesService,
+    private readonly tournaments: TournamentsService,
+  ) {}
+
+  /**
+   * A new local game (both paddles on one keyboard), replacing the client's
+   * previous one. `publish` receives every new state of the room.
+   */
   createLocal(
     clientId: string,
     publish: Publish,
@@ -94,16 +116,22 @@ export class GameRoomsService implements OnModuleDestroy {
     return room;
   }
 
+  /**
+   * An online game: two browsers, one room, one paddle each. The player who
+   * waited longer gets the left side (see MatchmakingService).
+   */
   createRemote(
     left: { clientId: string; userId?: number | undefined },
     right: { clientId: string; userId?: number | undefined },
     publish: Publish,
+    tournament?: TournamentSeat,
   ): GameRoom {
     this.leave(right.clientId);
     const room = this.createRoom(left.clientId, publish, ["left"], {
       mode: "remote",
       leftUserId: left.userId,
       rightUserId: right.userId,
+      tournament,
     });
     room.assign(right.clientId, ["right"]);
     this.roomOf.set(right.clientId, room.id);
@@ -167,7 +195,12 @@ export class GameRoomsService implements OnModuleDestroy {
     return roomId === undefined ? undefined : this.rooms.get(roomId);
   }
 
-  
+  /**
+   * A socket dropped. In an online game between two accounts the seat is
+   * kept warm: losing your connection for ten seconds should not lose you
+   * the game. Everything else — local games, games against the AI, and
+   * guests, who cannot be recognised when they come back — simply ends.
+   */
   disconnect(clientId: string): void {
     const room = this.roomFor(clientId);
     const players = room ? this.players.get(room.id) : undefined;
@@ -187,6 +220,10 @@ export class GameRoomsService implements OnModuleDestroy {
     this.notify(room.id, GAME_EVENTS.paused, { away: side, seconds: GRACE_SECONDS });
   }
 
+  /**
+   * The same player is back on a new socket. The seat, the paddle and the
+   * running game are all still there; only the connection changed.
+   */
   rejoin(userId: number, clientId: string): { roomId: string; side: Side } | null {
     const seat = this.away.get(userId);
     const room = seat ? this.rooms.get(seat.roomId) : undefined;
@@ -214,10 +251,32 @@ export class GameRoomsService implements OnModuleDestroy {
     this.close(room);
   }
 
+  /**
+   * A tournament match just finished: the bracket is told who won, using the
+   * aliases the players registered with. A failure is logged and swallowed —
+   * the game itself was played, and the players saw the result.
+   */
+  private async reportToTournament(seat: TournamentSeat, winner: Side): Promise<void> {
+    try {
+      await this.tournaments.recordResult(seat.tournamentId, {
+        round: seat.round,
+        slot: seat.slot,
+        winner: winner === "left" ? seat.leftAlias : seat.rightAlias,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Could not report the result of tournament ${seat.tournamentId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
+
+  /** The gateway hands us a way to speak to the players of a room. */
   onEvent(notify: Notify): void {
     this.notify = notify;
   }
 
+  /** Stops a room and forgets it, together with everyone sitting in it. */
   private close(room: GameRoom): void {
     room.stop();
     this.rooms.delete(room.id);
@@ -227,11 +286,18 @@ export class GameRoomsService implements OnModuleDestroy {
     }
   }
 
+  /** A game just ended: write it down. MatchesService ignores repeats. */
   private saveIfFinished(roomId: string, state: GameState): void {
     const players = this.players.get(roomId);
     if (state.winner === null || !players) return;
+    // The last snapshot has already gone out, so nothing needs this room any
+    // more: keeping it would leave a stopped room and its players in memory
+    // until somebody happened to disconnect.
     const room = this.rooms.get(roomId);
     if (room) setTimeout(() => this.close(room), 0);
+    if (players.tournament) {
+      void this.reportToTournament(players.tournament, state.winner);
+    }
     void this.matches.record({
       roomId,
       mode: players.mode,
@@ -244,6 +310,7 @@ export class GameRoomsService implements OnModuleDestroy {
   }
 }
 
+/** Which account holds one side of a room, if any. */
 function seatOwner(players: RoomPlayers | undefined, side: Side | undefined): number | undefined {
   if (!players || !side) return undefined;
   return side === "left" ? players.leftUserId : players.rightUserId;
