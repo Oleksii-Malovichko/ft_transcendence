@@ -7,7 +7,7 @@ import { GameCanvas } from "./GameCanvas";
 import { GameOver, Scoreboard } from "./Hud";
 import { LOCAL_BINDINGS, ONLINE_RIGHT_BINDINGS, SOLO_BINDINGS } from "./keys";
 import { Lobby } from "./Lobby";
-import { LOCAL_MODE, settingsOf, type UiMode, withSettings } from "./mode";
+import { LOCAL_MODE, settingsOf, type UiMode, waitsForOpponent, withSettings } from "./mode";
 import { ModePicker } from "./ModePicker";
 import { PingIndicator } from "./PingIndicator";
 import { RulesPanel } from "./RulesPanel";
@@ -24,25 +24,33 @@ function bindingsFor(mode: UiMode, side: Side | null) {
   return LOCAL_BINDINGS;
 }
 
-export function PlayScreen() {
-  const game = useGameSocket(LOCAL_MODE);
+export function PlayScreen({ tournamentId }: { tournamentId?: number }) {
+  // Arriving from a bracket with ?tournament=… means one particular match,
+  // chosen by the server; anything else starts as a local game.
+  const game = useGameSocket(tournamentId ? { kind: "tournament", tournamentId } : LOCAL_MODE);
   const { mode, online, hud } = game;
   const [theme, setTheme] = useState<ThemeName>("classic");
   useKeyboardInput(bindingsFor(mode, online.side), game.sendInput);
-  const searching = mode.kind === "online" && online.status !== "playing";
+  const searching = waitsForOpponent(mode) && online.status !== "playing";
 
   return (
     <div className="flex w-full max-w-3xl flex-col items-center gap-4">
       <ModePicker mode={mode} onChange={game.choose} />
-      {}
-      {mode.kind !== "online" && (
+      {/* Online games always use the classic rules: two players would have to
+          agree on anything else, which is a conversation we don't have yet. */}
+      {(mode.kind === "local" || mode.kind === "ai") && (
         <SettingsForm
           settings={settingsOf(mode)}
           onChange={(settings) => game.choose(withSettings(mode, settings))}
         />
       )}
       {searching ? (
-        <Lobby onCancel={game.cancelSearch} />
+        <Lobby
+          onCancel={game.cancelSearch}
+          message={
+            mode.kind === "tournament" ? "Waiting for your opponent to be ready…" : undefined
+          }
+        />
       ) : (
         <>
           {online.opponent && (
@@ -70,6 +78,7 @@ export function PlayScreen() {
   );
 }
 
+/** Everything inside the field: the score, the picture, and what sits on top. */
 function GameArea({
   stateRef,
   previousRef,
@@ -110,6 +119,7 @@ function GameArea({
   );
 }
 
+/** Which keys move which paddle, shown under the field. */
 function Controls({ mode }: { mode: UiMode }) {
   if (mode.kind === "local") {
     return (
@@ -133,6 +143,7 @@ function Key({ children }: { children: string }) {
   );
 }
 
+/** The row under the field: what the keys do, how far the server is, colours. */
 function Toolbar({
   mode,
   socket,
