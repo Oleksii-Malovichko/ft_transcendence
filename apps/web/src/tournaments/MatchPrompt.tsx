@@ -45,9 +45,12 @@ export function MatchPrompt({
         Your match is ready: <span className="text-accent">{you}</span> against{" "}
         <span className="text-accent">{opponent}</span>.
       </p>
-      <Link href="/play">
-        <Button>Go to the game</Button>
+      <Link href={`/play?tournament=${tournament.id}`}>
+        <Button>Play now</Button>
       </Link>
+      {/* Played somewhere else, or the game was interrupted? The result can
+          still be entered by hand; a game played here reports itself. */}
+      <span className="text-sm text-muted">Played it elsewhere?</span>
       <Button variant="secondary" disabled={busy} onClick={() => report(you)}>
         I won
       </Button>
