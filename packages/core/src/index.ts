@@ -1,11 +1,8 @@
+export * from "./schemas/api.js";
 export * from "./schemas/auth.js";
 export * from "./schemas/common-passwords.js";
+export * from "./schemas/friends.js";
+export * from "./schemas/profile.js";
+export * from "./game/index.js";
 export * from "./ai/index.js";
-export { AiPlayer } from "./ai-player.js";
-export { predictBallY } from "./predict.js";
-export { withAimError } from "./aim.js";
-export { decide } from "./decide.js";
-export { AI_PRESETS, DIFFICULTIES, DifficultySchema } from "./presets.js";
-export type { Difficulty } from "./presets.js";
-export * from "./schemas/api.js";
 export * from "./tournament/index.js";
