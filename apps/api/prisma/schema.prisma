@@ -1,3 +1,6 @@
+
+// The client is generated as TypeScript INSIDE src/, so Nest compiles it with
+// our code. It is git-ignored: `pnpm --filter @ft/api db:generate` rebuilds it.
 generator client {
   provider            = "prisma-client"
   output              = "../src/generated/prisma"
@@ -17,9 +20,14 @@ model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   /// argon2id hash; the plain password is never stored.
+  /// Null for accounts that only sign in with 42: there is no password to check.
   passwordHash String?  @map("password_hash")
+  /// The 42 account this user signs in with, when they use 42.
   fortyTwoId   Int?     @unique @map("forty_two_id")
+  /// The name other players see. Unique, so two people can't be mistaken
+  /// for each other. Empty until the user picks one on their profile.
   displayName  String?  @unique @map("display_name")
+  /// Set once an avatar has been uploaded; everyone else gets a default one.
   hasAvatar    Boolean  @default(false) @map("has_avatar")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -27,11 +35,20 @@ model User {
   /// Games this user played, on one side or the other.
   matchesAsLeft  Match[] @relation("LeftPlayer")
   matchesAsRight Match[] @relation("RightPlayer")
+  /// Tournaments this user registered for.
   tournamentSeats TournamentPlayer[]
+  /// The people this user added, and the people who added this user.
+  friends        Friendship[] @relation("Owner")
+  friendOf       Friendship[] @relation("Friend")
 
   @@map("users")
 }
 
+/// One finished game, kept so profiles can show a match history.
+///
+/// Both players are optional: a local game or a game against the AI may have
+/// no logged-in player at all, and a match must survive the deletion of an
+/// account (the row stays, the link becomes null).
 model Match {
   id          Int      @id @default(autoincrement())
   /// "local", "ai" or "remote".
@@ -108,4 +125,23 @@ model TournamentResult {
   /// A match is decided once.
   @@unique([tournamentId, round, slot])
   @@map("tournament_results")
+}
+
+/// Somebody's contact list. One row is one direction: adding a player puts
+/// them on your list without asking them, and their list is their own. A
+/// mutual "request and accept" dance would be a different feature; this one
+/// is what the subject asks for — see who you play with, and whether they
+/// are online right now.
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  friendId  Int      @map("friend_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User @relation("Owner", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("Friend", fields: [friendId], references: [id], onDelete: Cascade)
+
+  /// The same person cannot be added twice.
+  @@unique([userId, friendId])
+  @@map("friendships")
 }
