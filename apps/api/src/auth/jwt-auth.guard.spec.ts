@@ -1,3 +1,4 @@
+import { PresenceService } from "../users/presence.service.js";
 import { type ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import type { User } from "../generated/prisma/client.js";
@@ -12,7 +13,7 @@ function contextFor(request: Partial<AuthenticatedRequest>): ExecutionContext {
 
 function guardFindingUser(user: User | null): JwtAuthGuard {
   const auth = { userFromCookieHeader: () => Promise.resolve(user) } as unknown as AuthService;
-  return new JwtAuthGuard(auth);
+  return new JwtAuthGuard(auth, new PresenceService());
 }
 
 describe("JwtAuthGuard", () => {

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "session";
-const PRIVATE_PREFIXES = ["/profile", "/settings"];
+const PRIVATE_PREFIXES = ["/profile", "/settings", "/friends"];
 
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
@@ -18,4 +18,6 @@ export function proxy(request: NextRequest): NextResponse {
 
 export default proxy;
 
-export const config = { matcher: ["/profile/:path*", "/settings/:path*"] };
+export const config = {
+  matcher: ["/profile/:path*", "/settings/:path*", "/friends/:path*"],
+};

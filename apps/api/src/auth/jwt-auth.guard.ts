@@ -6,15 +6,20 @@ import {
 } from "@nestjs/common";
 import type { Request } from "express";
 import type { User } from "../generated/prisma/client.js";
+import { PresenceService } from "../users/presence.service.js";
 import { AuthService } from "./auth.service.js";
 
+/** A request that went through JwtAuthGuard. */
 export interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly presence: PresenceService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
@@ -23,6 +28,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("Please log in");
     }
     request.user = user;
+    this.presence.seen(user.id);
     return true;
   }
 }
