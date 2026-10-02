@@ -1,5 +1,7 @@
-import type { SignupInput } from "@ft/core";
+import { randomUUID } from "node:crypto";
+import type { LoginInput, SignupInput } from "@ft/core";
 import { ConflictException, Injectable } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { parseCookie } from "cookie";
 import { Prisma, type User } from "../generated/prisma/client.js";
 import { UsersService } from "../users/users.service.js";
@@ -12,11 +14,15 @@ function isUniqueViolation(error: unknown): boolean {
 
 @Injectable()
 export class AuthService {
+  private readonly dummyHash: Promise<string>;
+
   constructor(
     private readonly users: UsersService,
     private readonly passwords: PasswordService,
-  ) {}
-
+    private readonly jwt: JwtService,
+  ) {
+    this.dummyHash = passwords.hash(randomUUID());
+  }
 
   async signup(input: SignupInput): Promise<User> {
     const passwordHash = await this.passwords.hash(input.password);
@@ -29,6 +35,19 @@ export class AuthService {
       throw error;
     }
   }
+
+  async validateCredentials(input: LoginInput): Promise<User | null> {
+    const user = await this.users.findByEmail(input.email);
+    const passwordHash = user?.passwordHash ?? (await this.dummyHash);
+    const matches = await this.passwords.verify(passwordHash, input.password);
+    return matches && user ? user : null;
+  }
+
+  /** A signed session token for this user (stored in the cookie, see session.ts). */
+  createSessionToken(user: User): Promise<string> {
+    return this.jwt.signAsync({ sub: String(user.id) });
+  }
+
   async userFromCookieHeader(header: string | undefined): Promise<User | null> {
     const token = header ? parseCookie(header)[SESSION_COOKIE] : undefined;
     const userId = token ? await this.userIdFromToken(token) : null;

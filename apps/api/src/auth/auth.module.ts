@@ -14,6 +14,7 @@ import { SESSION_TTL_SECONDS } from "./session.js";
 @Module({
   imports: [
     forwardRef(() => UsersModule),
+    // JWTs signed with HS256 and our secret; only HS256 is accepted back.
     JwtModule.registerAsync({
       inject: [ENV],
       useFactory: (env: Env) => ({
@@ -25,6 +26,7 @@ import { SESSION_TTL_SECONDS } from "./session.js";
   ],
   controllers: [AuthController, FortyTwoController],
   providers: [AuthService, FortyTwoService, PasswordService, JwtAuthGuard],
+  // Other modules import AuthModule to protect their routes with JwtAuthGuard.
   exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}
