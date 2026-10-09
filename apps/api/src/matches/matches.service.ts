@@ -41,6 +41,11 @@ export class MatchesService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * The last games of one player, told from their side: who they faced, what
+   * the score was, and whether they won. Opponents appear by display name,
+   * never by email, and a deleted opponent simply has no name left.
+   */
   async historyFor(userId: number, take = 10): Promise<MatchSummary[]> {
     const rows = await this.prisma.match.findMany({
       where: { OR: [{ leftUserId: userId }, { rightUserId: userId }] },
