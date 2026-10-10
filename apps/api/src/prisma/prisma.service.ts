@@ -1,20 +1,13 @@
-import { Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { PrismaPg } from "@prisma/adapter-pg";
+import type { Env } from "../config/env.js";
+import { ENV } from "../config/env.module.js";
 import { PrismaClient } from "../generated/prisma/client.js";
-
-// Fail fast with a clear message instead of an obscure driver error later.
-function readDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error("DATABASE_URL is not set. Copy .env.example to .env and fill it in.");
-  }
-  return url;
-}
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor() {
-    super({ adapter: new PrismaPg({ connectionString: readDatabaseUrl() }) });
+  constructor(@Inject(ENV) env: Env) {
+    super({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
   }
 
   // With a driver adapter, $connect() opens no connection by itself (it even
