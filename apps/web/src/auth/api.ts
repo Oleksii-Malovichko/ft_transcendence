@@ -1,6 +1,7 @@
 import type { LoginInput, MeResponse, PublicUser, SignupInput } from "@ft/core";
 import { apiFetch } from "@/lib/api";
 
+/** The logged-in user, or null for a guest (the API answers 200 either way). */
 export async function fetchMe(): Promise<PublicUser | null> {
   const { user } = await apiFetch<MeResponse>("/auth/me");
   return user;
