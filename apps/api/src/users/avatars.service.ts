@@ -1,11 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// src/users/avatars.service.ts — the uploaded pictures on disk
-//
-// Files are named after the user id, never after anything the user typed, so
-// no upload can escape the folder. The type is decided by the FIRST BYTES of
-// the file, not by the name or the Content-Type the browser claims: those
-// are trivial to fake, and "avatar.png" containing a script is a classic.
-// ─────────────────────────────────────────────────────────────────────────────
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
@@ -54,6 +46,7 @@ export class AvatarsService {
     await writeFile(this.pathFor(userId, kind.extension), bytes);
   }
 
+  /** The stored picture, or null when this user never uploaded one. */
   async read(userId: number): Promise<{ bytes: Buffer; contentType: string } | null> {
     for (const { kind } of SIGNATURES) {
       const bytes = await readFile(this.pathFor(userId, kind.extension)).catch(() => null);

@@ -10,6 +10,7 @@ export function toPublicUser(user: User): PublicUser {
   };
 }
 
+/** Where a user's avatar is served from; the route answers even without an upload. */
 export function avatarUrlFor(userId: number): string {
   return `/api/users/${userId}/avatar`;
 }

@@ -10,6 +10,7 @@ function serviceWhereUpdate(update: () => Promise<User>): UsersService {
   return new UsersService({ user: { update } } as unknown as PrismaService);
 }
 
+/** What Prisma throws when a unique index refuses a value. */
 function duplicateName(): Prisma.PrismaClientKnownRequestError {
   return new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
     code: "P2002",
