@@ -3,18 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist",
+    "prisma",
+    "prisma.config.ts"
+  ],
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "dev": "prisma generate && nest start --watch",
     "start:prod": "node --enable-source-maps dist/main.js",
-    "test": "vitest run",
+    "test": "prisma generate && vitest run",
     "test:watch": "vitest",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "prisma generate && vitest run --config ./vitest.config.e2e.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
+    "@ft/core": "workspace:*",
     "@nestjs/common": "12.0.4",
     "@nestjs/core": "12.0.4",
+    "@nestjs/jwt": "12.0.2",
     "@nestjs/platform-express": "12.0.4",
+    "@nestjs/platform-socket.io": "12.0.4",
+    "@nestjs/websockets": "12.0.4",
     "@node-rs/argon2": "2.2.1",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
@@ -23,6 +34,7 @@
     "prisma": "7.10.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
+    "socket.io": "4.8.3",
     "zod": "catalog:"
   },
   "devDependencies": {

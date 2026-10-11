@@ -3,23 +3,15 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": ".",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strict": true,
+    "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
 
+    "outDir": "./dist",
+    "rootDir": ".",
+    "sourceMap": true, //       stack traces point to .ts lines, not compiled .js
+    "removeComments": true, //  comments are for us, not for the compiled output
+    "incremental": true,
     "types": ["node"]
   }
 }
