@@ -1,10 +1,10 @@
 import {
   CreateTournamentSchema,
-  JoinTournamentSchema,
-  ReportResultSchema,
   type CreateTournament,
-  type ReportResult,
   type JoinTournament,
+  type ReportResult,
+  ReportResultSchema,
+  JoinTournamentSchema,
   type TournamentDetail,
   type TournamentSummary,
 } from "@ft/core";
@@ -34,6 +34,7 @@ export class TournamentsController {
     private readonly tournaments: TournamentsService,
     private readonly auth: AuthService,
   ) {}
+
   /** Every tournament, newest first.  200 list */
   @Get()
   list(): Promise<TournamentSummary[]> {
@@ -64,6 +65,7 @@ export class TournamentsController {
   ): Promise<TournamentSummary> {
     return this.tournaments.create(input);
   }
+
   /**
    * Take a seat.  201 bracket · 400 invalid alias · 401 guest · 404 · 409 full or taken
    *
@@ -89,6 +91,7 @@ export class TournamentsController {
   ): Promise<TournamentDetail> {
     return this.tournaments.leave(id, user.id);
   }
+
   /**
    * Report who won the match being played.  201 bracket · 400 wrong winner ·
    * 401 guest · 404 · 409 not the match that is due

@@ -1,7 +1,7 @@
 import {
   buildBracket,
-  drawSeats,
   championOf as findChampion,
+  drawSeats,
   type CreateTournament,
   type ReportResult,
   nextMatch,
@@ -10,7 +10,6 @@ import {
   type TournamentStatus,
   type TournamentSummary,
 } from "@ft/core";
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
   BadRequestException,
   ConflictException,
@@ -38,15 +37,20 @@ export class TournamentsService {
     return rows.map((row) => ({ ...toSummary(row), registered: row._count.players }));
   }
 
+  /**
+   * Takes a seat. Everything happens in one transaction: two players pressing
+   * "join" at the same instant must not both get the last seat, and the
+   * database's unique indexes refuse a second alias or a second seat even if
+   * they do. When the last seat is taken, the seats are drawn again — the
+   * bracket must not reward whoever registered first — and the tournament
+   * starts.
+   */
   async join(tournamentId: number, alias: string, userId: number): Promise<TournamentDetail> {
     await this.prisma
       .$transaction(async (tx) => {
         const tournament = await tx.tournament.findUnique({
           where: { id: tournamentId },
-          include: {
-            players: { orderBy: { seat: "asc" } },
-            results: { orderBy: [{ round: "asc" }, { slot: "asc" }] },
-          },
+          include: { players: { select: { id: true } } },
         });
         if (!tournament) throw new NotFoundException("No such tournament");
         if (tournament.status !== "open") throw new ConflictException("Registration is closed");
@@ -159,7 +163,10 @@ export class TournamentsService {
   async detail(id: number, userId?: number): Promise<TournamentDetail | null> {
     const row = await this.prisma.tournament.findUnique({
       where: { id },
-      include: { players: { orderBy: { seat: "asc" } } },
+      include: {
+        players: { orderBy: { seat: "asc" } },
+        results: { orderBy: [{ round: "asc" }, { slot: "asc" }] },
+      },
     });
     if (!row) return null;
     const aliasesBySeat = Array.from({ length: row.size }, (_, seat) => {
