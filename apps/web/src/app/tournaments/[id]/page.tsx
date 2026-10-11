@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTournament } from "@/app/tournaments/server";
-import { TournamentView } from "@/app/tournaments/TournamentView";
+import { getTournament } from "@/tournaments/server";
+import { TournamentView } from "@/tournaments/TournamentView";
 
 export const metadata: Metadata = { title: "Tournament" };
 

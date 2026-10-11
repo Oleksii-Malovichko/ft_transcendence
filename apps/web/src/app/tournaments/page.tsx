@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { currentUser } from "@/auth/server";
 import { Card } from "@/components/ui/Card";
-import { CreateTournamentForm } from "@/app/tournaments/CreateTournamentForm";
-import { listTournaments } from "@/app/tournaments/server";
+import { CreateTournamentForm } from "@/tournaments/CreateTournamentForm";
+import { listTournaments } from "@/tournaments/server";
 
 export const metadata: Metadata = { title: "Tournaments" };
 
