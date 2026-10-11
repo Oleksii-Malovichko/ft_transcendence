@@ -1,4 +1,5 @@
 "use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type LoginInput, LoginSchema } from "@ft/core";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,6 +13,7 @@ import { useAuth } from "./AuthProvider";
 
 export function LoginForm() {
   const router = useRouter();
+
   const next = safeNext(useSearchParams().get("next"));
   const toast = useToast();
   const { refresh } = useAuth();
@@ -24,7 +26,6 @@ export function LoginForm() {
     try {
       await login(values);
       await refresh();
-      router.push("/");
       router.push(next);
     } catch (error) {
       toast(applyApiError(error, setError), "error");
@@ -52,4 +53,13 @@ export function LoginForm() {
       </Button>
     </form>
   );
+}
+
+/**
+ * Only in-app paths are allowed: without this check, a link like
+ * /login?next=https://evil.example would send the user there after a
+ * successful login, with our page's trust behind it (an "open redirect").
+ */
+function safeNext(value: string | null): string {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
