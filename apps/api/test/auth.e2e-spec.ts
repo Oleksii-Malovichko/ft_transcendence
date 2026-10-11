@@ -14,11 +14,13 @@ const TEST_ENV = {
   API_PORT: 3001,
   DATABASE_URL: "postgresql://unused",
   JWT_SECRET: "x".repeat(32),
+  UPLOADS_DIR: "./uploads",
 } as const;
 
 const EMAIL = "ada@example.com";
 const PASSWORD = "seven purple lanterns hum";
 
+/** Just enough of the users table, in memory, including its unique email. */
 class FakeUsers {
   private readonly users = new Map<string, User>();
   private nextId = 1;
@@ -36,6 +38,8 @@ class FakeUsers {
       id: this.nextId++,
       email: data.email,
       passwordHash: data.passwordHash,
+      displayName: null,
+      hasAvatar: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     } as User;
@@ -79,7 +83,12 @@ describe("auth routes (e2e)", () => {
       .post("/api/auth/signup")
       .send({ email: "  Ada@Example.COM ", password: PASSWORD })
       .expect(201);
-    expect(response.body).toEqual({ user: { id: 1, email: EMAIL } });
+    expect(response.body.user).toEqual({
+      id: 1,
+      email: EMAIL,
+      displayName: null,
+      avatarUrl: "/api/users/1/avatar",
+    });
     const cookie = response.headers["set-cookie"][0];
     expect(cookie).toMatch(/HttpOnly/);
     expect(cookie).toMatch(/SameSite=Lax/);
