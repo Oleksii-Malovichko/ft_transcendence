@@ -1,6 +1,7 @@
 import type { InputMessage, PaddleInput, Side } from "@ft/core";
 import { useEffect } from "react";
 
+/** KeyboardEvent.code values: physical keys, the same on every layout. */
 export interface KeyBinding {
   side: Side;
   up: string;
@@ -14,9 +15,13 @@ export function useKeyboardInput(
   useEffect(() => {
     const held = new Set<string>();
     const sent = new Map<Side, PaddleInput>();
+    const sides = [...new Set(bindings.map((binding) => binding.side))];
     const update = () => {
-      for (const { side, up, down } of bindings) {
-        const input = ((held.has(down) ? 1 : 0) - (held.has(up) ? 1 : 0)) as PaddleInput;
+      for (const side of sides) {
+        const keys = bindings.filter((binding) => binding.side === side);
+        const down = keys.some((binding) => held.has(binding.down));
+        const up = keys.some((binding) => held.has(binding.up));
+        const input = ((down ? 1 : 0) - (up ? 1 : 0)) as PaddleInput;
         if (sent.get(side) !== input) {
           sent.set(side, input);
           onInput({ side, input });
@@ -26,6 +31,7 @@ export function useKeyboardInput(
     const gameKeys = new Set(bindings.flatMap(({ up, down }) => [up, down]));
     const onKeyDown = (event: KeyboardEvent) => {
       if (!gameKeys.has(event.code)) return;
+      // Without this, the arrow keys also scroll the page while playing.
       event.preventDefault();
       held.add(event.code);
       update();
@@ -34,6 +40,7 @@ export function useKeyboardInput(
       held.delete(event.code);
       update();
     };
+    // The window lost focus (alt-tab): release every key, or a paddle keeps moving.
     const onBlur = () => {
       held.clear();
       update();
