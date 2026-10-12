@@ -1,51 +1,39 @@
-import { DIFFICULTIES, type JoinRequest } from "@ft/core";
-import type { ReactNode } from "react";
+import { DEFAULT_SETTINGS, DifficultySchema } from "@ft/core";
+import type { UiMode } from "./mode";
 
-export function ModePicker({
-  request,
-  onChange,
-}: {
-  request: JoinRequest;
-  onChange: (request: JoinRequest) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-2">
-      <ModeButton selected={request.mode === "local"} onClick={() => onChange({ mode: "local" })}>
-        2 players
-      </ModeButton>
-      {DIFFICULTIES.map((difficulty) => (
-        <ModeButton
-          key={difficulty}
-          selected={request.mode === "ai" && request.difficulty === difficulty}
-          onClick={() => onChange({ mode: "ai", difficulty })}
-        >
-          AI · {difficulty}
-        </ModeButton>
-      ))}
-    </div>
-  );
+const OPTIONS: { label: string; mode: UiMode }[] = [
+  { label: "2 players", mode: { kind: "local", settings: DEFAULT_SETTINGS } },
+  ...DifficultySchema.options.map((difficulty) => ({
+    label: `AI · ${difficulty}`,
+    mode: { kind: "ai", difficulty, settings: DEFAULT_SETTINGS } as UiMode,
+  })),
+  { label: "Online", mode: { kind: "online" } },
+];
+
+function isCurrent(option: UiMode, current: UiMode): boolean {
+  if (option.kind !== current.kind) return false;
+  return option.kind !== "ai" || current.kind !== "ai" || option.difficulty === current.difficulty;
 }
 
-function ModeButton({
-  selected,
-  onClick,
-  children,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  const colors = selected
-    ? "border-amber-400 bg-amber-400 text-slate-950"
-    : "border-slate-400 hover:border-slate-600";
+export function ModePicker({ mode, onChange }: { mode: UiMode; onChange: (mode: UiMode) => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={`rounded-md border px-3 py-1.5 text-sm ${colors}`}
-    >
-      {children}
-    </button>
+    <div className="flex flex-wrap justify-center gap-2">
+      {OPTIONS.map((option) => {
+        const current = isCurrent(option.mode, mode);
+        return (
+          <button
+            key={option.label}
+            type="button"
+            aria-pressed={current}
+            onClick={() => onChange(option.mode)}
+            className={`rounded-md border px-3 py-1.5 text-sm ${
+              current ? "border-accent text-accent" : "border-edge text-muted hover:text-ink"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
