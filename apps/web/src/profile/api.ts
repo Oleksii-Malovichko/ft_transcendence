@@ -8,3 +8,13 @@ export async function updateProfile(update: ProfileUpdate): Promise<PublicUser> 
   });
   return user;
 }
+
+export async function uploadAvatar(file: File): Promise<PublicUser> {
+  const body = new FormData();
+  body.append("avatar", file);
+  const { user } = await apiFetch<{ user: PublicUser }>("/users/me/avatar", {
+    method: "POST",
+    body,
+  });
+  return user;
+}
