@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM nginx:1.30-alpine
 
 RUN apk add --no-cache openssl \

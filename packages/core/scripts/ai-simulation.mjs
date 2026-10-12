@@ -47,11 +47,18 @@ function casualPlayer(side, random) {
   };
 }
 
+/** An average player: watches often, but reacts slowly and aims roughly. */
+const AVERAGE = { visionInterval: 0.15, reactionDelay: 0.32, aimError: 55, deadZone: 10 };
+
 /** A good player: sees the game continuously and predicts, unlike our AI. */
 const SKILLED = { visionInterval: 0.1, reactionDelay: 0.15, aimError: 15, deadZone: 6 };
 
 const REFERENCES = {
   casual: (side, seed) => casualPlayer(side, seededRandom(seed)),
+  average: (side, seed) => {
+    const player = new AiPlayer(side, AVERAGE, seededRandom(seed));
+    return (state) => player.update(state, DT);
+  },
   skilled: (side, seed) => {
     const player = new AiPlayer(side, SKILLED, seededRandom(seed));
     return (state) => player.update(state, DT);
@@ -83,9 +90,6 @@ function measure(difficulty, reference) {
 }
 
 console.log(`${GAMES} games per level and opponent — how often the AI wins\n`);
-console.log(`level    vs casual                  vs skilled`);
 for (const difficulty of DIFFICULTIES) {
-  console.log(
-    `${difficulty.padEnd(8)} ${measure(difficulty, "casual")} ${measure(difficulty, "skilled")}`,
-  );
+  console.log();
 }
