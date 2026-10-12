@@ -6,6 +6,7 @@ import {
   type GameState,
   type InputMessage,
   MATCH_EVENTS,
+  TOURNAMENT_EVENTS,
   type MatchFound,
   type Side,
 } from "@ft/core";
@@ -48,6 +49,10 @@ function sameHud(hud: Hud, state: GameState): boolean {
 
 /** Asks the server to start whatever the player chose. */
 function start(socket: Socket, mode: UiMode): void {
+  if (mode.kind === "tournament") {
+    socket.emit(TOURNAMENT_EVENTS.play, { tournamentId: mode.tournamentId });
+    return;
+  }
   const request = toJoinRequest(mode);
   if (request) socket.emit(GAME_EVENTS.join, request);
   else socket.emit(MATCH_EVENTS.find);
@@ -100,6 +105,7 @@ function listen(socket: Socket, wiring: Wiring): void {
   });
 }
 
+/** Opens the connection and keeps it listening for as long as the page lives. */
 function useGameConnection(wiring: Wiring) {
   const socketRef = useRef<Socket | null>(null);
 
@@ -116,6 +122,7 @@ function useGameConnection(wiring: Wiring) {
   return socketRef;
 }
 
+/** Everything the player can ask for: change mode, cancel, play again, press a key. */
 function useGameActions(
   socketRef: MutableRefObject<Socket | null>,
   modeRef: MutableRefObject<UiMode>,
@@ -146,6 +153,7 @@ function useGameActions(
     [socketRef],
   );
 
+  /** Play again: a new game, or a new opponent online. */
   const restart = useCallback(() => {
     reset();
     if (modeRef.current.kind === "online") setOnline({ ...IDLE, status: "searching" });
@@ -175,6 +183,8 @@ export function useGameSocket(initialMode: UiMode) {
     modeRef.current = mode;
   }, [mode]);
 
+  // Stable as long as its pieces are (refs and setState never change), so the
+  // connection is opened once and not on every render.
   const wiring = useMemo(
     () => ({
       stateRef,
