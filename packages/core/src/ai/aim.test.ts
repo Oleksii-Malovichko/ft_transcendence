@@ -1,4 +1,3 @@
-// Unit tests for the aim error: bounded, reachable, and mostly small.
 import { describe, expect, it } from "vitest";
 import { FIELD, PADDLE } from "../game/constants.js";
 import { withAimError } from "./aim.js";
