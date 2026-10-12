@@ -1,3 +1,5 @@
+"use client";
+
 import { type ComponentProps, useId } from "react";
 
 export type InputProps = ComponentProps<"input"> & { label: string; error?: string };

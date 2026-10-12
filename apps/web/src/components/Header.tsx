@@ -9,16 +9,10 @@ export function Header() {
         <Link href="/" className="text-lg font-semibold tracking-tight">
           ft_transcendence
         </Link>
-        <ul className="flex gap-4 text-sm">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} className="text-muted hover:text-ink">
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <Nav />
+        <div className="flex items-center gap-4">
+          <Nav />
+          <AuthMenu />
+        </div>
       </div>
     </header>
   );
