@@ -1,3 +1,5 @@
+"use client";
+
 import type { Friend } from "@ft/core";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
