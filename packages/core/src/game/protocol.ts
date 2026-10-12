@@ -79,6 +79,7 @@ export const TOURNAMENT_EVENTS = {
 } as const;
 
 /** Sent with "tournament:play": which tournament the player means. */
-export interface PlayTournamentMatch {
-  tournamentId: number;
-}
+export const PlayTournamentMatchSchema = z.object({
+  tournamentId: z.number().int().positive(),
+});
+export type PlayTournamentMatch = z.infer<typeof PlayTournamentMatchSchema>;
