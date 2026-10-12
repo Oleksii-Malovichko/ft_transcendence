@@ -34,7 +34,18 @@ services:
       API_PORT: 3001
       # Inside Compose the database host is the service name "db".
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-
+      JWT_SECRET: ${JWT_SECRET:?add JWT_SECRET to .env (openssl rand -hex 32)}
+      UPLOADS_DIR: /app/uploads
+      # Where the BROWSER reaches this site. The 42 sign-in sends the browser
+      # back here, so it must be the public address (nginx), not a container.
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://localhost:${HTTPS_PORT:-8443}}
+      # Signing in with 42 is optional: empty values simply switch it off.
+      FORTY_TWO_CLIENT_ID: ${FORTY_TWO_CLIENT_ID:-}
+      FORTY_TWO_CLIENT_SECRET: ${FORTY_TWO_CLIENT_SECRET:-}
+      FORTY_TWO_REDIRECT_URI: ${FORTY_TWO_REDIRECT_URI:-}
+    volumes:
+      # Uploaded avatars live in a volume: rebuilding the image keeps them.
+      - avatars:/app/uploads
     depends_on:
       db:
         condition: service_healthy # start only once PostgreSQL accepts connections
@@ -93,4 +104,5 @@ services:
 
 volumes:
   db-data:
+  avatars:
   certs:
