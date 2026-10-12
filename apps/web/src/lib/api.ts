@@ -2,6 +2,7 @@ import type { ApiErrorBody } from "@ft/core";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+/** A full address on the API, for links the BROWSER must follow itself. */
 export function apiUrl(path: string): string {
   return `${BASE_URL}/api${path}`;
 }
@@ -22,7 +23,12 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     ...options,
     // Without this the browser would leave the session cookie at home.
     credentials: "include",
-    headers: { "content-type": "application/json", ...options.headers },
+    // A FormData body (an upload) must set its own content-type, boundary
+    // included: forcing JSON here would break every file upload.
+    headers:
+      options.body instanceof FormData
+        ? { ...options.headers }
+        : { "content-type": "application/json", ...options.headers },
   });
   if (!response.ok) {
     throw await toApiError(response);
