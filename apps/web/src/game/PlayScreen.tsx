@@ -1,3 +1,5 @@
+"use client";
+
 import { type GameState, type Side, THEMES, type ThemeName } from "@ft/core";
 import { type RefObject, useState } from "react";
 import type { Socket } from "socket.io-client";

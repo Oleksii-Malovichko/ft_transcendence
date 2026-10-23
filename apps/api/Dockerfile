@@ -29,6 +29,7 @@ FROM base AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
+COPY --from=build --chown=node:node /repo/apps/api/prisma ./prisma
 COPY --chown=node:node --chmod=755 apps/api/docker-entrypoint.sh ./
 
 USER 1000

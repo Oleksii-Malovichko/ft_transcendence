@@ -7,3 +7,14 @@ export interface ApiErrorBody {
   /** Per-field problems of a rejected form, keyed by field name. */
   fields?: Record<string, string[]>;
 }
+
+export interface PublicUser {
+  id: number;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string;
+}
+
+export interface MeResponse {
+  user: PublicUser | null;
+}

@@ -1,5 +1,5 @@
-import { BALL, FIELD } from "../game/constants.js";
-import type { Ball } from "../game/state.js";
+import { BALL, FIELD } from "./game/constants.js";
+import type { Ball } from "./game/state.js";
 
 // The ball's CENTER moves between TOP and TOP + SPAN: it bounces when its
 // edge touches a wall.
