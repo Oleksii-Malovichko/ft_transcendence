@@ -3,6 +3,7 @@ export * from "./schemas/auth.js";
 export * from "./schemas/common-passwords.js";
 export * from "./schemas/friends.js";
 export * from "./schemas/profile.js";
+export * from "./chat/schemas.js";
 export * from "./game/index.js";
 export * from "./ai/index.js";
 export * from "./tournament/index.js";

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "./auth/auth.module.js";
+import { ChatModule } from "./chat/chat.module.js";
 import { EnvModule } from "./config/env.module.js";
 import { GameModule } from "./game/game.module.js";
 import { HealthController } from "./health/health.controller.js";
@@ -14,6 +15,7 @@ import { UsersModule } from "./users/users.module.js";
     PrismaModule,
     UsersModule,
     AuthModule,
+    ChatModule,
     GameModule,
     TournamentsModule,
     PresenceModule,

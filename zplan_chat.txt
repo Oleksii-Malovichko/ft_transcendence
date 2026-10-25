@@ -1,0 +1,29 @@
+добавить Chat в навигацию
+
+Навигация → Chat → выбрать друга → переписка
+                                  ├─ отправить сообщение
+                                  ├─ заблокировать
+                                  └─ Invite to game → принять → матч 1 на 1
+
+Структура чата:
+
+apps/api/src/chat/ (backend, NestJS-конроллеры, сервис и логика чата)
+  chat.module.ts
+  chat.controller.ts    # HTTP: список переписок и история
+  chat.service.ts       # создать/найти чат, проверить доступ, сохранить сообщение
+
+apps/web/src/app/chat/ (страница чата, Next.js маршрут /chat, который отрисовывает страницу)
+Это не просто HTML файл, а react-страница
+  page.tsx              # страница /chat
+
+apps/web/src/chat/ (список переписок, сообщения, поле отправки, вызовы API)
+  ChatView.tsx
+  ConversationList.tsx
+  MessageList.tsx
+  MessageComposer.tsx
+  api.ts
+
+packages/core/src/chat/ (Структуры БД. Изменения тут применяются отдельно Prisma-миграцией в apps/api/prisma/migrations)
+  schemas.ts            # общие типы и Zod-схемы								
+
+Поток такой: страница Next.js -> HTTP API NestJS -> сервис чата -> Prisma -> PostgreSQL
