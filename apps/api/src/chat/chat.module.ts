@@ -7,5 +7,6 @@ import { ChatService } from "./chat.service.js";
   imports: [AuthModule],
   controllers: [ChatController],
   providers: [ChatService],
+  exports: [ChatService],
 })
 export class ChatModule {}

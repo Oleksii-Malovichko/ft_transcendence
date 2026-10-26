@@ -25,6 +25,7 @@ describe("ChatService.getOrCreateConversation", () => {
     const upsert = vi.fn().mockResolvedValue(conversation);
     const service = chatService({
       user: { findUnique: vi.fn().mockResolvedValue({ id: 2 }) },
+      userBlock: { findFirst: vi.fn().mockResolvedValue(null) },
       conversation: { upsert },
     });
 
@@ -45,7 +46,10 @@ describe("ChatService.getOrCreateConversation", () => {
   });
 
   it("rejects a recipient that does not exist", async () => {
-    const service = chatService({ user: { findUnique: vi.fn().mockResolvedValue(null) } });
+    const service = chatService({
+      user: { findUnique: vi.fn().mockResolvedValue(null) },
+      userBlock: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
     await expect(service.getOrCreateConversation(2, 99)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
@@ -62,7 +66,10 @@ describe("ChatService messages", () => {
     };
     const findMany = vi.fn().mockResolvedValue([newer, older]);
     const service = chatService({
-      conversation: { findFirst: vi.fn().mockResolvedValue({ id: 12 }) },
+      conversation: {
+        findFirst: vi.fn().mockResolvedValue({ userLowId: 2, userHighId: 9 }),
+      },
+      userBlock: { findFirst: vi.fn().mockResolvedValue(null) },
       message: { findMany },
     });
 
@@ -79,6 +86,7 @@ describe("ChatService messages", () => {
     const createMessage = vi.fn();
     const transaction = {
       conversation: { findFirst: vi.fn().mockResolvedValue(null) },
+      userBlock: { findFirst: vi.fn().mockResolvedValue(null) },
       message: { create: createMessage },
       $transaction: undefined,
     };
@@ -101,9 +109,10 @@ describe("ChatService messages", () => {
     const update = vi.fn().mockResolvedValue({});
     const transaction = {
       conversation: {
-        findFirst: vi.fn().mockResolvedValue({ id: 12 }),
+        findFirst: vi.fn().mockResolvedValue({ userLowId: 2, userHighId: 9 }),
         update,
       },
+      userBlock: { findFirst: vi.fn().mockResolvedValue(null) },
       message: { create },
     };
     const service = chatService({
@@ -118,5 +127,38 @@ describe("ChatService messages", () => {
       data: { conversationId: 12, senderId: 2, body: "hello" },
     });
     expect(update).toHaveBeenCalled();
+  });
+
+  it("does not allow messages after either player blocks the other", async () => {
+    const create = vi.fn();
+    const transaction = {
+      conversation: { findFirst: vi.fn().mockResolvedValue({ userLowId: 2, userHighId: 9 }) },
+      userBlock: { findFirst: vi.fn().mockResolvedValue({ id: 1 }) },
+      message: { create },
+    };
+    const service = chatService({
+      $transaction: (work: (tx: typeof transaction) => Promise<unknown>) => work(transaction),
+    });
+
+    await expect(service.sendMessage(2, 12, "hello")).rejects.toThrow(
+      "Messaging is unavailable because one player is blocked",
+    );
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("stores a user's block idempotently", async () => {
+    const upsert = vi.fn().mockResolvedValue({});
+    const service = chatService({
+      user: { findUnique: vi.fn().mockResolvedValue({ id: 9 }) },
+      userBlock: { upsert },
+    });
+
+    await service.blockUser(2, 9);
+
+    expect(upsert).toHaveBeenCalledWith({
+      where: { blockerId_blockedId: { blockerId: 2, blockedId: 9 } },
+      create: { blockerId: 2, blockedId: 9 },
+      update: {},
+    });
   });
 });

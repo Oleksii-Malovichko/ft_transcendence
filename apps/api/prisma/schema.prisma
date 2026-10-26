@@ -42,6 +42,8 @@ model User {
   conversationsLow  Conversation[]     @relation("ConversationLow")
   conversationsHigh Conversation[]     @relation("ConversationHigh")
   sentMessages      Message[]          @relation("MessageSender")
+  blocks            UserBlock[]        @relation("Blocker")
+  blockedBy         UserBlock[]        @relation("Blocked")
 
   @@map("users")
 }
@@ -180,4 +182,20 @@ model Message {
 
   @@index([conversationId, createdAt, id])
   @@map("messages")
+}
+
+/// A directional block: the blocker decides whose messages and game invites
+/// they no longer receive.
+model UserBlock {
+  id        Int      @id @default(autoincrement())
+  blockerId Int      @map("blocker_id")
+  blockedId Int      @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("user_blocks")
 }

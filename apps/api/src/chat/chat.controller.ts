@@ -1,4 +1,5 @@
 import {
+  BlockUserSchema,
   type ChatConversation,
   type ChatMessage,
   type CreateConversation,
@@ -6,7 +7,17 @@ import {
   type SendMessage,
   SendMessageSchema,
 } from "@ft/core";
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import type { User } from "../generated/prisma/client.js";
@@ -46,5 +57,31 @@ export class ChatController {
     @Body(new ZodValidationPipe(SendMessageSchema)) input: SendMessage,
   ): Promise<ChatMessage> {
     return this.chat.sendMessage(user.id, id, input.body);
+  }
+
+  @Get("blocks/:userId")
+  blockStatus(
+    @CurrentUser() user: User,
+    @Param("userId", ParseIntPipe) userId: number,
+  ): Promise<{ blockedByMe: boolean; blockedByThem: boolean }> {
+    return this.chat.blockStatus(user.id, userId);
+  }
+
+  @Post("blocks")
+  @HttpCode(204)
+  async blockUser(
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(BlockUserSchema)) input: { userId: number },
+  ): Promise<void> {
+    await this.chat.blockUser(user.id, input.userId);
+  }
+
+  @Delete("blocks/:userId")
+  @HttpCode(204)
+  async unblockUser(
+    @CurrentUser() user: User,
+    @Param("userId", ParseIntPipe) userId: number,
+  ): Promise<void> {
+    await this.chat.unblockUser(user.id, userId);
   }
 }

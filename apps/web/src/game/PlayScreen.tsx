@@ -6,6 +6,8 @@ import type { Socket } from "socket.io-client";
 import { AwayOverlay } from "./AwayOverlay";
 import { EffectsBar } from "./EffectsBar";
 import { GameCanvas } from "./GameCanvas";
+import { GameInvitePrompt } from "./GameInvitePrompt";
+import { InGameChat } from "./InGameChat";
 import { GameOver, Scoreboard } from "./Hud";
 import { LOCAL_BINDINGS, ONLINE_RIGHT_BINDINGS, SOLO_BINDINGS } from "./keys";
 import { Lobby } from "./Lobby";
@@ -38,6 +40,14 @@ export function PlayScreen({ tournamentId }: { tournamentId?: number }) {
   return (
     <div className="flex w-full max-w-3xl flex-col items-center gap-4">
       <ModePicker mode={mode} onChange={game.choose} />
+      {game.incomingInvite && (
+        <GameInvitePrompt invite={game.incomingInvite} onAnswer={game.respondToInvite} />
+      )}
+      {game.inviteError && (
+        <p role="alert" className="text-sm text-danger">
+          {game.inviteError}
+        </p>
+      )}
       {/* Online games always use the classic rules: two players would have to
           agree on anything else, which is a conversation we don't have yet. */}
       {(mode.kind === "local" || mode.kind === "ai") && (
@@ -70,6 +80,13 @@ export function PlayScreen({ tournamentId }: { tournamentId?: number }) {
             you={online.side}
             onRestart={game.restart}
           />
+          {online.status === "playing" && (
+            <InGameChat
+              messages={game.chatMessages}
+              error={game.chatError}
+              onSend={game.sendChat}
+            />
+          )}
           {/* On a phone the keyboard is not an option: your paddle gets buttons. */}
           <TouchControls side={online.side ?? "left"} onInput={game.sendInput} />
           <Toolbar mode={mode} socket={game.socketRef.current} theme={theme} onTheme={setTheme} />

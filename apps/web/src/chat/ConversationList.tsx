@@ -41,7 +41,11 @@ export function ConversationList({
                     {conversation.otherUser.displayName ?? "Unnamed player"}
                   </span>
                   <span className="block truncate text-sm">
-                    {conversation.lastMessage?.body ?? "Start a conversation"}
+                    {conversation.blockedByMe
+                      ? "You blocked this player"
+                      : conversation.blockedByThem
+                        ? "This player blocked you"
+                        : (conversation.lastMessage?.body ?? "Start a conversation")}
                   </span>
                 </button>
               </li>

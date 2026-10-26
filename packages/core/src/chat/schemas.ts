@@ -5,6 +5,11 @@ export const CreateConversationSchema = z.object({
 });
 export type CreateConversation = z.infer<typeof CreateConversationSchema>;
 
+export const BlockUserSchema = z.object({
+  userId: z.number().int().positive(),
+});
+export type BlockUser = z.infer<typeof BlockUserSchema>;
+
 export const SendMessageSchema = z.object({
   body: z.string().trim().min(1, "Message cannot be empty").max(1000, "Message is too long"),
 });
@@ -27,4 +32,6 @@ export interface ChatConversation {
   };
   updatedAt: string;
   lastMessage: ChatMessage | null;
+  blockedByMe: boolean;
+  blockedByThem: boolean;
 }

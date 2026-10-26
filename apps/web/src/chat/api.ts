@@ -22,3 +22,14 @@ export function sendMessage(conversationId: number, body: string): Promise<ChatM
     body: JSON.stringify({ body }),
   });
 }
+
+export function blockUser(userId: number): Promise<void> {
+  return apiFetch<void>("/chat/blocks", {
+    method: "POST",
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export function unblockUser(userId: number): Promise<void> {
+  return apiFetch<void>(`/chat/blocks/${userId}`, { method: "DELETE" });
+}

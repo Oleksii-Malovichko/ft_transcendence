@@ -143,6 +143,19 @@ export class GameRoomsService implements OnModuleDestroy {
     this.roomFor(clientId)?.setInput(clientId, side, input);
   }
 
+  remoteRoomId(clientId: string): string | undefined {
+    const roomId = this.roomOf.get(clientId);
+    return roomId && this.players.get(roomId)?.mode === "remote" ? roomId : undefined;
+  }
+
+  remoteOpponentUserId(clientId: string): number | undefined {
+    const roomId = this.remoteRoomId(clientId);
+    const players = roomId ? this.players.get(roomId) : undefined;
+    const side = this.roomFor(clientId)?.sidesOf(clientId)[0];
+    if (!players || !side) return undefined;
+    return side === "left" ? players.rightUserId : players.leftUserId;
+  }
+
   /** Ends the client's game, if it has one: the loop stops, the room is forgotten. */
   leave(clientId: string): void {
     const room = this.roomFor(clientId);

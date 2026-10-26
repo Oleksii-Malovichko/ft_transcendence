@@ -1,6 +1,8 @@
 import {
   createInitialState,
   GAME_EVENTS,
+  GAME_INVITE_EVENTS,
+  type GameChatMessage,
   type GameForfeited,
   type GamePaused,
   type GameState,
@@ -33,6 +35,11 @@ export interface OnlineState {
   /** The paddle you control online; null in the other modes. */
   side: Side | null;
   opponent: string | null;
+}
+
+export interface IncomingGameInvite {
+  inviteId: string;
+  inviter: string;
 }
 
 const START = createInitialState();
@@ -68,6 +75,10 @@ interface Wiring {
   setHud: (update: (previous: Hud) => Hud) => void;
   setOnline: (state: OnlineState) => void;
   setInterruption: (interruption: Interruption) => void;
+  setChatMessages: (update: (current: GameChatMessage[]) => GameChatMessage[]) => void;
+  setChatError: (message: string | null) => void;
+  setIncomingInvite: (invite: IncomingGameInvite | null) => void;
+  setInviteError: (message: string | null) => void;
   reset: () => void;
 }
 
@@ -75,9 +86,19 @@ interface Wiring {
 function listen(socket: Socket, wiring: Wiring): void {
   const { stateRef, previousRef, arrivedAt, modeRef, playingRef } = wiring;
   socket.on("connect", () => {
-    // A reconnection in the middle of an online game must NOT ask for a new
-    // opponent: the server still holds the seat and puts us back in it.
-    if (!playingRef.current) start(socket, modeRef.current);
+    socket.emit(GAME_EVENTS.ready, (reply: { rejoined: MatchFound | null }) => {
+      if (reply.rejoined) {
+        playingRef.current = true;
+        wiring.reset();
+        wiring.setOnline({
+          status: "playing",
+          side: reply.rejoined.side,
+          opponent: reply.rejoined.opponent,
+        });
+      } else if (!playingRef.current) {
+        start(socket, modeRef.current);
+      }
+    });
   });
   socket.on(GAME_EVENTS.state, (state: GameState) => {
     // Keep the one before it: the canvas draws between the two.
@@ -102,6 +123,21 @@ function listen(socket: Socket, wiring: Wiring): void {
     playingRef.current = true;
     wiring.reset();
     wiring.setOnline({ status: "playing", side: found.side, opponent: found.opponent });
+  });
+  socket.on(GAME_EVENTS.chatMessage, (message: GameChatMessage) => {
+    wiring.setChatMessages((current) => [...current.slice(-99), message]);
+  });
+  socket.on(GAME_EVENTS.chatError, (error: { message?: string }) =>
+    wiring.setChatError(error.message ?? "Could not send in-game message"),
+  );
+  socket.on(GAME_INVITE_EVENTS.incoming, (invite: IncomingGameInvite) =>
+    wiring.setIncomingInvite(invite),
+  );
+  socket.on(GAME_INVITE_EVENTS.error, (error: { inviteId?: string; message?: string }) => {
+    wiring.setIncomingInvite((current) =>
+      current?.inviteId === error.inviteId ? null : current,
+    );
+    wiring.setInviteError(error.message ?? "Game invitation failed");
   });
 }
 
@@ -173,10 +209,18 @@ export function useGameSocket(initialMode: UiMode) {
   const [hud, setHud] = useState<Hud>(START_HUD);
   const [online, setOnline] = useState<OnlineState>(IDLE);
   const [interruption, setInterruption] = useState<Interruption>(PLAYING);
+  const [chatMessages, setChatMessages] = useState<GameChatMessage[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [incomingInvite, setIncomingInvite] = useState<IncomingGameInvite | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
     stateRef.current = START;
     setHud(START_HUD);
+    setChatMessages([]);
+    setChatError(null);
+    setIncomingInvite(null);
+    setInviteError(null);
   }, []);
 
   useEffect(() => {
@@ -195,12 +239,31 @@ export function useGameSocket(initialMode: UiMode) {
       setHud,
       setOnline,
       setInterruption,
+      setChatMessages,
+      setChatError,
+      setIncomingInvite,
+      setInviteError,
       reset,
     }),
     [reset],
   );
   const socketRef = useGameConnection(wiring);
   const actions = useGameActions(socketRef, modeRef, playingRef, setMode, setOnline, reset);
+  const sendChat = useCallback((body: string) => {
+    setChatError(null);
+    socketRef.current?.emit(GAME_EVENTS.chatSend, { body });
+  }, []);
+  const respondToInvite = useCallback(
+    (inviteId: string, accept: boolean) => {
+      socketRef.current?.emit(
+        accept ? GAME_INVITE_EVENTS.accept : GAME_INVITE_EVENTS.decline,
+        { inviteId },
+      );
+      setIncomingInvite(null);
+      setInviteError(null);
+    },
+    [],
+  );
 
   return {
     mode,
@@ -210,6 +273,12 @@ export function useGameSocket(initialMode: UiMode) {
     hud,
     online,
     interruption,
+    chatMessages,
+    chatError,
+    sendChat,
+    incomingInvite,
+    inviteError,
+    respondToInvite,
     socketRef,
     ...actions,
   };

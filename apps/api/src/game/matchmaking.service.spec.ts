@@ -8,42 +8,49 @@ const guest: WaitingPlayer = { clientId: "socket-4", label: "Guest" };
 const otherGuest: WaitingPlayer = { clientId: "socket-5", label: "Guest" };
 
 describe("MatchmakingService", () => {
-  it("makes the first player wait, then pairs the second with them", () => {
+  it("makes the first player wait, then pairs the second with them", async () => {
     const queue = new MatchmakingService();
-    expect(queue.join(ada)).toBeNull();
+    expect(await queue.join(ada, async () => false)).toBeNull();
     expect(queue.size).toBe(1);
-    expect(queue.join(bob)).toEqual([ada, bob]);
+    expect(await queue.join(bob, async () => false)).toEqual([ada, bob]);
     expect(queue.size).toBe(0);
   });
 
-  it("gives the left paddle to whoever waited, the right one to the newcomer", () => {
+  it("gives the left paddle to whoever waited, the right one to the newcomer", async () => {
     const queue = new MatchmakingService();
-    queue.join(ada);
-    const pair = queue.join(bob);
+    await queue.join(ada, async () => false);
+    const pair = await queue.join(bob, async () => false);
     expect(pair?.[0].label).toBe(ada.label);
     expect(pair?.[1].label).toBe(bob.label);
     expect(queue.size).toBe(0);
   });
 
-  it("forgets a player who cancels or disconnects", () => {
+  it("forgets a player who cancels or disconnects", async () => {
     const queue = new MatchmakingService();
-    queue.join(ada);
+    await queue.join(ada, async () => false);
     queue.leave(ada.clientId);
     expect(queue.size).toBe(0);
-    expect(queue.join(bob)).toBeNull();
+    expect(await queue.join(bob, async () => false)).toBeNull();
   });
 
-  it("never pairs someone with their own second tab", () => {
+  it("never pairs someone with their own second tab", async () => {
     const queue = new MatchmakingService();
-    queue.join(ada);
-    expect(queue.join(adaSecondTab)).toBeNull();
+    await queue.join(ada, async () => false);
+    expect(await queue.join(adaSecondTab, async () => false)).toBeNull();
     expect(queue.size).toBe(1);
-    expect(queue.join(bob)).toEqual([adaSecondTab, bob]);
+    expect(await queue.join(bob, async () => false)).toEqual([adaSecondTab, bob]);
   });
 
-  it("still pairs two guests with each other", () => {
+  it("still pairs two guests with each other", async () => {
     const queue = new MatchmakingService();
-    queue.join(guest);
-    expect(queue.join(otherGuest)).toEqual([guest, otherGuest]);
+    await queue.join(guest, async () => false);
+    expect(await queue.join(otherGuest, async () => false)).toEqual([guest, otherGuest]);
+  });
+
+  it("does not match two users who have blocked each other", async () => {
+    const queue = new MatchmakingService();
+    await queue.join(ada, async () => false);
+    expect(await queue.join(bob, async () => true)).toBeNull();
+    expect(queue.size).toBe(2);
   });
 });

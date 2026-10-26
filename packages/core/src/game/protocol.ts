@@ -20,7 +20,39 @@ export const GAME_EVENTS = {
   forfeited: "game:forfeited",
   /** browser → server → browser: used only to measure the round trip. */
   ping: "game:ping",
+  /** browser → server: send a message to the other player in the current game. */
+  chatSend: "game:chat:send",
+  /** server → both players: a message sent during the current game. */
+  chatMessage: "game:chat:message",
+  /** server → sender: the in-game message could not be delivered. */
+  chatError: "game:chat:error",
+  /** browser → server: find out whether this connection resumed an existing game. */
+  ready: "game:ready",
 } as const;
+
+export const GameChatMessageSchema = z.object({
+  body: z.string().trim().min(1).max(500),
+});
+export type GameChatMessage = {
+  sender: string;
+  body: string;
+  createdAt: string;
+};
+
+export const GAME_INVITE_EVENTS = {
+  send: "game:invite",
+  incoming: "game:invite:incoming",
+  accept: "game:invite:accept",
+  decline: "game:invite:decline",
+  error: "game:invite:error",
+} as const;
+
+export const GameInviteRequestSchema = z.object({
+  recipientId: z.number().int().positive(),
+});
+export const GameInviteResponseSchema = z.object({
+  inviteId: z.string().uuid(),
+});
 
 export const JoinRequestSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("local"), settings: GameSettingsSchema.optional() }),
@@ -58,7 +90,7 @@ export const MATCH_EVENTS = {
 export interface MatchFound {
   roomId: string;
   side: Side;
-  /** How to show the other player (their email, or "Guest"). */
+  /** How to show the other player (their display name, or "Guest"). */
   opponent: string;
 }
 

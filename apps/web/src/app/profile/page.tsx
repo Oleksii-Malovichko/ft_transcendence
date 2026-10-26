@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/auth/server";
 import { Card } from "@/components/ui/Card";
+import { EditProfileForm } from "@/profile/EditProfileForm";
 import { MatchHistory } from "@/profile/MatchHistory";
 import { ProfileHeader } from "@/profile/ProfileHeader";
 import { fetchProfile } from "@/profile/server";
@@ -20,6 +21,9 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
       <ProfileHeader profile={profile} />
+      <Card title="Edit profile">
+        <EditProfileForm displayName={profile.displayName} />
+      </Card>
       <Card title="Recent games">
         <MatchHistory matches={profile.matches} />
       </Card>

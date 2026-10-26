@@ -9,7 +9,15 @@ export type { GameSettings } from "./settings.js";
 export type { Ball, GameState, Inputs, PaddleInput, Side } from "./state.js";
 export { paddleX } from "./paddle.js";
 export { step } from "./step.js";
-export { GAME_EVENTS, InputMessageSchema, JoinRequestSchema } from "./protocol.js";
+export {
+  GAME_EVENTS,
+  GAME_INVITE_EVENTS,
+  GameChatMessageSchema,
+  GameInviteRequestSchema,
+  GameInviteResponseSchema,
+  InputMessageSchema,
+  JoinRequestSchema,
+} from "./protocol.js";
 export {
   MATCH_EVENTS,
   MATCH_MODES,
@@ -18,6 +26,7 @@ export {
 } from "./protocol.js";
 export type {
   GameForfeited,
+  GameChatMessage,
   GamePaused,
   InputMessage,
   JoinReply,

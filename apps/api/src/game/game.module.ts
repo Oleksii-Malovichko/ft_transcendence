@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module.js";
+import { ChatModule } from "../chat/chat.module.js";
 import { MatchesModule } from "../matches/matches.module.js";
 import { TournamentsModule } from "../tournaments/tournaments.module.js";
 import { UsersModule } from "../users/users.module.js";
@@ -9,7 +10,7 @@ import { MatchmakingService } from "./matchmaking.service.js";
 
 @Module({
   // AuthModule gives us AuthService, which turns a cookie into a user.
-  imports: [AuthModule, MatchesModule, TournamentsModule, UsersModule],
+  imports: [AuthModule, ChatModule, MatchesModule, TournamentsModule, UsersModule],
   providers: [GameGateway, GameRoomsService, MatchmakingService],
 })
 export class GameModule {}
