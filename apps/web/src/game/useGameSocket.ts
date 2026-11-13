@@ -12,7 +12,16 @@ import {
   type MatchFound,
   type Side,
 } from "@ft/core";
-import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { Socket } from "socket.io-client";
 import { LOCAL_MODE, type UiMode, toJoinRequest } from "./mode";
 import { connectSocket } from "./socket";
@@ -77,7 +86,7 @@ interface Wiring {
   setInterruption: (interruption: Interruption) => void;
   setChatMessages: (update: (current: GameChatMessage[]) => GameChatMessage[]) => void;
   setChatError: (message: string | null) => void;
-  setIncomingInvite: (invite: IncomingGameInvite | null) => void;
+  setIncomingInvite: Dispatch<SetStateAction<IncomingGameInvite | null>>;
   setInviteError: (message: string | null) => void;
   reset: () => void;
 }

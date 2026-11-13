@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  CHAT_EVENTS,
   GAME_INVITE_EVENTS,
   MATCH_EVENTS,
   type ChatConversation,
   type ChatMessage,
+  type ChatSendResult,
   type Friend,
   type MatchFound,
 } from "@ft/core";
@@ -20,7 +22,6 @@ import {
   fetchConversations,
   fetchMessages,
   openConversation,
-  sendMessage,
   unblockUser,
 } from "./api";
 import { MessageComposer } from "./MessageComposer";
@@ -40,6 +41,7 @@ export function ChatView({ friends, currentUserId }: { friends: Friend[]; curren
   const [incomingInvite, setIncomingInvite] = useState<IncomingInvite | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const activeConversationIdRef = useRef<number | null>(null);
   const router = useRouter();
   const toast = useToast();
 
@@ -62,17 +64,41 @@ export function ChatView({ friends, currentUserId }: { friends: Friend[]; curren
       setInviteSending(false);
       router.push("/play");
     };
+    const onMessage = (message: ChatMessage) => {
+      if (activeConversationIdRef.current === message.conversationId) {
+        setMessages((current) =>
+          current.some((existing) => existing.id === message.id) ? current : [...current, message],
+        );
+      }
+      setConversations((current) =>
+        current
+          .map((conversation) =>
+            conversation.id === message.conversationId
+              ? { ...conversation, lastMessage: message, updatedAt: message.createdAt }
+              : conversation,
+          )
+          .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
+      );
+      void refreshConversations().catch((error: unknown) => {
+        toast(
+          error instanceof ApiError ? error.message : "Could not refresh conversations",
+          "error",
+        );
+      });
+    };
     socket.on(GAME_INVITE_EVENTS.incoming, onInvite);
     socket.on(GAME_INVITE_EVENTS.error, onInviteError);
     socket.on(MATCH_EVENTS.found, onFound);
+    socket.on(CHAT_EVENTS.message, onMessage);
     return () => {
       socket.off(GAME_INVITE_EVENTS.incoming, onInvite);
       socket.off(GAME_INVITE_EVENTS.error, onInviteError);
       socket.off(MATCH_EVENTS.found, onFound);
+      socket.off(CHAT_EVENTS.message, onMessage);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [router, toast]);
+  }, [refreshConversations, router, toast]);
 
   useEffect(() => {
     let activeEffect = true;
@@ -97,6 +123,7 @@ export function ChatView({ friends, currentUserId }: { friends: Friend[]; curren
   }, [toast]);
 
   const selectConversation = async (conversation: ChatConversation) => {
+    activeConversationIdRef.current = conversation.id;
     setActive(conversation);
     setMessages([]);
     if (conversation.blockedByMe || conversation.blockedByThem) return;
@@ -110,6 +137,7 @@ export function ChatView({ friends, currentUserId }: { friends: Friend[]; curren
   const selectFriend = async (friend: Friend) => {
     try {
       const conversation = await openConversation(friend.id);
+      activeConversationIdRef.current = conversation.id;
       setActive(conversation);
       setMessages(await fetchMessages(conversation.id));
     } catch (error) {
@@ -124,23 +152,30 @@ export function ChatView({ friends, currentUserId }: { friends: Friend[]; curren
   };
 
   const submitMessage = async (body: string): Promise<boolean> => {
-    if (!active) return false;
-    try {
-      const message = await sendMessage(active.id, body);
-      setMessages((current) => [...current, message]);
-    } catch (error) {
-      toast(error instanceof ApiError ? error.message : "Could not send message", "error");
+    const socket = socketRef.current;
+    if (!active || !socket?.connected) {
+      toast("Chat connection is unavailable. Please try again.", "error");
       return false;
     }
-    try {
-      await refreshConversations();
-    } catch (error) {
-      toast(
-        error instanceof ApiError ? error.message : "Message sent, but list refresh failed",
-        "error",
-      );
-    }
-    return true;
+    return new Promise<boolean>((resolve) => {
+      socket
+        .timeout(10_000)
+        .emit(
+          CHAT_EVENTS.send,
+          { conversationId: active.id, body },
+          (error: Error | null, result: ChatSendResult) => {
+            if (error) {
+              toast("Message could not be sent. Please check your connection.", "error");
+              resolve(false);
+            } else if (!result.ok) {
+              toast(result.error, "error");
+              resolve(false);
+            } else {
+              resolve(true);
+            }
+          },
+        );
+    });
   };
 
   const setBlocked = async (shouldBlock: boolean) => {

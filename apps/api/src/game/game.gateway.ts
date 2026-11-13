@@ -393,7 +393,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   // Starts the room, then tells each player which paddle is theirs.
-  private startOnlineGame(left: WaitingPlayer, right: WaitingPlayer): void {
+	private startOnlineGame(left: WaitingPlayer, right: WaitingPlayer): void {
     const room = this.rooms.createRemote(left, right, (roomId, state) =>
       this.server.to(roomId).emit(GAME_EVENTS.state, state),
     );
@@ -407,6 +407,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       const found: MatchFound = { roomId: room.id, side: seat.side, opponent: seat.opponent };
       socket?.emit(MATCH_EVENTS.found, found);
     }
+	}
 
     private readonly pendingInvites = new Map<
       string,
@@ -436,7 +437,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.pendingInvites.delete(inviteId);
     }
   }
-}
 
 /** Somebody waiting for the other player of their bracket match. */
 interface ReadyPlayer {

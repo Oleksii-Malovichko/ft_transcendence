@@ -75,6 +75,15 @@ export class ChatService {
   }
 
   async sendMessage(userId: number, conversationId: number, body: string): Promise<ChatMessage> {
+    const result = await this.sendMessageWithRecipient(userId, conversationId, body);
+    return result.message;
+  }
+
+  async sendMessageWithRecipient(
+    userId: number,
+    conversationId: number,
+    body: string,
+  ): Promise<{ message: ChatMessage; recipientId: number }> {
     return this.prisma.$transaction(async (transaction) => {
       const otherUserId = await this.requireParticipant(userId, conversationId, transaction);
       await this.requireNotBlocked(userId, otherUserId, transaction);
@@ -85,7 +94,7 @@ export class ChatService {
         where: { id: conversationId },
         data: { updatedAt: new Date() },
       });
-      return this.toMessage(message);
+      return { message: this.toMessage(message), recipientId: otherUserId };
     });
   }
 

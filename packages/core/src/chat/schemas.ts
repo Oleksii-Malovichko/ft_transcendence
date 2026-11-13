@@ -15,6 +15,18 @@ export const SendMessageSchema = z.object({
 });
 export type SendMessage = z.infer<typeof SendMessageSchema>;
 
+export const SendChatMessageSchema = SendMessageSchema.extend({
+  conversationId: z.number().int().positive(),
+});
+export type SendChatMessage = z.infer<typeof SendChatMessageSchema>;
+
+export const CHAT_EVENTS = {
+  send: "chat:message:send",
+  message: "chat:message",
+} as const;
+
+export type ChatSendResult = { ok: true } | { ok: false; error: string };
+
 export interface ChatMessage {
   id: number;
   conversationId: number;
